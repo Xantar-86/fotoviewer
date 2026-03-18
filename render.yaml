@@ -1,0 +1,30 @@
+services:
+  # ── Backend: FastAPI ─────────────────────────────────────────────────────────
+  - type: web
+    name: feetbusiness-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: feetbusiness-db
+          property: connectionString
+
+  # ── Frontend: Next.js ────────────────────────────────────────────────────────
+  - type: web
+    name: feetbusiness-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    # NEXT_PUBLIC_API_URL moet je handmatig instellen in Render dashboard
+    # nadat de backend is deployed (zie README stap 5)
+
+databases:
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  - name: feetbusiness-db
+    databaseName: feetbusiness
+    plan: free
