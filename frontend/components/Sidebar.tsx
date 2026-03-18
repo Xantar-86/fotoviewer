@@ -134,10 +134,8 @@ function MobileNav({ pathname }: { pathname: string }) {
               className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-0 flex-1"
             >
               <div className={clsx(
-                'w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200',
-                isActive
-                  ? 'bg-gradient-to-br from-purple-600/40 to-violet-600/30 text-purple-300'
-                  : 'text-white/40'
+                'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 overflow-hidden',
+                isActive ? 'text-purple-300' : 'text-white/40'
               )}>
                 {isActive && (
                   <motion.div
@@ -146,7 +144,7 @@ function MobileNav({ pathname }: { pathname: string }) {
                     transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
                   />
                 )}
-                <Icon className="w-5 h-5 relative" />
+                <Icon className="w-5 h-5 relative z-10" />
               </div>
               <span className={clsx(
                 'text-[10px] font-medium leading-tight truncate w-full text-center',

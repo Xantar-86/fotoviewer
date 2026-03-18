@@ -16,48 +16,22 @@ import {
   Palette,
   Info,
   ExternalLink,
-  RefreshCw,
 } from 'lucide-react'
-import { api } from '@/lib/api'
 
 export default function SettingsPage() {
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
-  const [apiUrl, setApiUrl] = useState('')
   const [watermarkText, setWatermarkText] = useState('© FeetBusiness')
-  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking')
 
   useEffect(() => {
-    // Load stored settings
     const storedKey = localStorage.getItem('anthropic_api_key') || ''
-    const storedUrl = localStorage.getItem('api_url') || (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
     const storedWatermark = localStorage.getItem('default_watermark') || '© FeetBusiness'
-
     setApiKey(storedKey)
-    setApiUrl(storedUrl)
     setWatermarkText(storedWatermark)
-
-    checkBackend(storedUrl)
   }, [])
-
-  const checkBackend = async (url?: string) => {
-    setBackendStatus('checking')
-    try {
-      const target = url || apiUrl
-      const res = await fetch(`${target}/health`, { signal: AbortSignal.timeout(5000) })
-      if (res.ok) {
-        setBackendStatus('online')
-      } else {
-        setBackendStatus('offline')
-      }
-    } catch {
-      setBackendStatus('offline')
-    }
-  }
 
   const saveSettings = () => {
     localStorage.setItem('anthropic_api_key', apiKey)
-    localStorage.setItem('api_url', apiUrl)
     localStorage.setItem('default_watermark', watermarkText)
     toast.success('Instellingen opgeslagen')
   }
@@ -150,7 +124,7 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Backend connection */}
+        {/* API Status */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,58 +132,30 @@ export default function SettingsPage() {
           className="glass-card p-6"
         >
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 bg-blue-500/15 rounded-xl flex items-center justify-center">
-              <Server className="w-4.5 h-4.5 text-blue-400" />
+            <div className="w-9 h-9 bg-green-500/15 rounded-xl flex items-center justify-center">
+              <Server className="w-4.5 h-4.5 text-green-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Backend Verbinding</h3>
-              <p className="text-xs text-white/40">API server URL configuratie</p>
+              <h3 className="font-semibold text-white">Backend Status</h3>
+              <p className="text-xs text-white/40">Next.js API routes (ingebouwd)</p>
             </div>
-            <div className="ml-auto flex items-center gap-2">
-              {backendStatus === 'checking' && (
-                <span className="badge text-xs bg-yellow-500/15 text-yellow-300 border-yellow-500/25 flex items-center gap-1">
-                  <RefreshCw className="w-3 h-3 animate-spin" /> Controleren
-                </span>
-              )}
-              {backendStatus === 'online' && (
-                <span className="badge-green text-xs flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" /> Online
-                </span>
-              )}
-              {backendStatus === 'offline' && (
-                <span className="badge-red text-xs flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> Offline
-                </span>
-              )}
-            </div>
+            <span className="ml-auto badge-green text-xs flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> Actief
+            </span>
           </div>
 
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              placeholder="http://localhost:8000"
-              className="input-dark flex-1 text-sm font-mono"
-            />
-            <button
-              onClick={() => checkBackend()}
-              className="btn-secondary text-sm px-4 flex items-center gap-1.5"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Test
-            </button>
+          <div className="space-y-2 text-sm">
+            {[
+              { route: '/api/images/*', label: 'Foto verwerking (sharp)' },
+              { route: '/api/ai/*', label: 'AI Studio (Claude)' },
+              { route: '/api/business/*', label: 'Business data (Supabase)' },
+            ].map(({ route, label }) => (
+              <div key={route} className="flex items-center justify-between bg-white/[0.02] rounded-xl px-3 py-2">
+                <span className="text-white/50">{label}</span>
+                <code className="text-xs text-purple-400/70 font-mono">{route}</code>
+              </div>
+            ))}
           </div>
-
-          {backendStatus === 'offline' && (
-            <div className="mt-3 bg-red-500/8 border border-red-500/15 rounded-xl p-3">
-              <p className="text-xs text-red-300/70">
-                Backend niet bereikbaar. Zorg dat de Python server draait met:
-                <code className="block mt-1.5 bg-black/30 rounded px-2 py-1 font-mono text-white/50">
-                  uvicorn main:app --reload
-                </code>
-              </p>
-            </div>
-          )}
         </motion.div>
 
         {/* Default watermark */}
