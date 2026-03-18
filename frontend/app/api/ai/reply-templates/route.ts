@@ -16,9 +16,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { api_key, scenario = 'Prijsvraag' } = body
+    const apiKey = (api_key || '').trim()
     const context = SCENARIOS[scenario] || `scenario: ${scenario}`
 
-    const client = new Anthropic({ apiKey: api_key })
+    const client = new Anthropic({ apiKey })
     const response = await client.messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 1024,
@@ -44,6 +45,8 @@ Regels: Alles in het Nederlands. Professioneel maar persoonlijk. Klaar om te geb
     if (match) return NextResponse.json({ templates: JSON.parse(match[0]).slice(0, 3) })
     return NextResponse.json({ templates: [] })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    const msg = e?.error?.error?.message || e?.message || 'Onbekende fout'
+    const httpStatus = e?.status === 401 ? 401 : e?.status === 429 ? 429 : 500
+    return NextResponse.json({ error: msg }, { status: httpStatus })
   }
 }

@@ -10,16 +10,44 @@ function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' |
   return 'image/jpeg'
 }
 
+function parseHex(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace('#', '').slice(0, 6).padEnd(6, '0')
+  return {
+    r: parseInt(h.slice(0, 2), 16) || 0,
+    g: parseInt(h.slice(2, 4), 16) || 0,
+    b: parseInt(h.slice(4, 6), 16) || 0,
+  }
+}
+
+async function generateBgBuffer(params: any, w: number, h: number): Promise<Buffer> {
+  if (params.bg_type === 'gradient' && params.bg_from && params.bg_to) {
+    const angle = params.bg_direction === 'lr' ? 'x1="0%" y1="0%" x2="100%" y2="0%"' : 'x1="0%" y1="0%" x2="0%" y2="100%"'
+    const svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g" ${angle}>
+          <stop offset="0%" stop-color="${params.bg_from}"/>
+          <stop offset="100%" stop-color="${params.bg_to}"/>
+        </linearGradient>
+      </defs>
+      <rect width="${w}" height="${h}" fill="url(#g)"/>
+    </svg>`
+    return sharp(Buffer.from(svg)).png().toBuffer() as Promise<Buffer>
+  }
+  const color = params.bg_color ? parseHex(params.bg_color) : { r: 255, g: 255, b: 255 }
+  return sharp({ create: { width: w, height: h, channels: 3, background: color } }).png().toBuffer() as Promise<Buffer>
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const apiKey = formData.get('api_key') as string
-    const prompt = formData.get('prompt') as string
+    const apiKey = ((formData.get('api_key') as string) || '').trim()
+    const removeBgKey = ((formData.get('remove_bg_key') as string) || '').trim()
+    const prompt = (formData.get('prompt') as string || '').trim()
 
     if (!apiKey) return NextResponse.json({ error: 'Anthropic API sleutel vereist' }, { status: 400 })
     if (!file) return NextResponse.json({ error: 'Geen bestand ontvangen' }, { status: 400 })
-    if (!prompt?.trim()) return NextResponse.json({ error: 'Geen bewerkingsopdracht opgegeven' }, { status: 400 })
+    if (!prompt) return NextResponse.json({ error: 'Geen bewerkingsopdracht opgegeven' }, { status: 400 })
 
     const buffer = Buffer.from(await file.arrayBuffer())
     const b64 = buffer.toString('base64')
@@ -28,7 +56,7 @@ export async function POST(request: NextRequest) {
     const client = new Anthropic({ apiKey })
     const response = await client.messages.create({
       model: 'claude-opus-4-6',
-      max_tokens: 512,
+      max_tokens: 600,
       messages: [{
         role: 'user',
         content: [
@@ -37,35 +65,42 @@ export async function POST(request: NextRequest) {
             type: 'text',
             text: `Je bent een professionele foto-editor. Analyseer de foto en de bewerkingsopdracht.
 
-Bewerkingsopdracht van de gebruiker: "${prompt}"
+Bewerkingsopdracht: "${prompt}"
 
-Geef bewerkingsparameters terug die dit effect realiseren met sharp.js.
-Return UITSLUITEND dit JSON object (geen uitleg erbuiten):
+Bepaal het TYPE bewerking en return UITSLUITEND geldig JSON (geen tekst erbuiten):
+
+Als de opdracht over KLEUR/FILTER/HELDERHEID gaat → type "color_grade":
 {
-  "brightness": <0.5-1.8, standaard 1.0>,
-  "saturation": <0.0-2.0, standaard 1.0, 0.0=zwart-wit>,
-  "hue": <-180 tot 180, graden hue rotatie, 0=geen>,
-  "sharpness": <0.0-3.0, 0=geen scherpte, 0.8=normaal>,
-  "blur": <0.0-15.0, 0=geen blur>,
-  "grayscale": <true of false>,
-  "gamma": <0.5-3.0, 1.0=normaal, >1=lichter schaduwen>,
-  "uitleg": "Korte Nederlandse uitleg wat je hebt gedaan en waarom"
+  "type": "color_grade",
+  "brightness": <0.5-1.8, 1.0=normaal>,
+  "saturation": <0.0-2.0, 1.0=normaal, 0.0=zwart-wit>,
+  "hue": <-180 tot 180, 0=geen>,
+  "sharpness": <0.0-3.0, 0=geen>,
+  "blur": <0.0-15.0, 0=geen>,
+  "grayscale": <true/false>,
+  "gamma": <0.5-3.0, 1.0=normaal>,
+  "uitleg": "Korte NL uitleg"
 }
 
-Interpreteer de opdracht intelligent (NL/EN):
-- "warmer/warm" → hue: 8, saturation: 1.1, brightness: 1.05
-- "koeler/koel/cool" → hue: -8, saturation: 0.95
-- "vintage/retro" → saturation: 0.65, brightness: 0.93, gamma: 1.15, hue: 6
-- "zwart-wit/monochroom/b&w" → grayscale: true
-- "helderder/lichter/brighter" → brightness: 1.25, gamma: 1.1
-- "donkerder/darker" → brightness: 0.78, gamma: 0.88
-- "levendig/vibrant/kleurrijker" → saturation: 1.5, brightness: 1.05
-- "matte/mat" → saturation: 0.7, brightness: 0.93, gamma: 1.08
-- "scherper/sharper" → sharpness: 2.0
-- "zachter/softer" → blur: 1.8, sharpness: 0
-- "dramatisch/dramatic" → saturation: 1.35, brightness: 0.85, sharpness: 1.2
-- "roze/roze tint/pink" → hue: -30, saturation: 1.2
-- "goud/golden" → hue: 15, saturation: 1.15, brightness: 1.1`,
+Als de opdracht over de ACHTERGROND gaat (andere achtergrond, kleur achtergrond, studio, etc.) → type "background_change":
+{
+  "type": "background_change",
+  "bg_type": "solid" of "gradient",
+  "bg_color": "#hexcode" (voor solid),
+  "bg_from": "#hexcode", "bg_to": "#hexcode", "bg_direction": "tb" of "lr" (voor gradient),
+  "uitleg": "Korte NL uitleg van de gekozen achtergrond"
+}
+
+Kleur mapping voor achtergrond:
+wit/white=#ffffff, zwart/black=#000000, roze/pink=#ffb6c1, paars/purple=#6d28d9
+blauw/blue=#1e40af, rood/red=#dc2626, goud/gold=#d97706, beige=#f5e6d3
+grijs/gray=#6b7280, groen/green=#059669, strand/beach=gradient #87CEEB→#f5e6d3
+studio=gradient #1a1a2e→#2d1b69, roze gradient=#ff6b9d→#c084fc, zonsondergang=#f97316→#7c3aed
+
+Filter voorbeelden:
+warmer=hue+8,sat1.1, koeler=hue-8, vintage=sat0.65,gamma1.15,hue6
+zwart-wit=grayscale true, levendig=sat1.5, dramatisch=sat1.35,brightness0.85
+matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
           },
         ],
       }],
@@ -77,15 +112,56 @@ Interpreteer de opdracht intelligent (NL/EN):
 
     const params = JSON.parse(match[0])
 
-    // Apply edits with sharp
-    let pipeline = sharp(buffer)
+    // ── Background change ──────────────────────────────────────────────────
+    if (params.type === 'background_change') {
+      if (!removeBgKey) {
+        return NextResponse.json({
+          error: 'Achtergrond wijzigen vereist een remove.bg API sleutel. Voeg deze gratis toe bij Instellingen (50 foto\'s/maand).',
+        }, { status: 400 })
+      }
 
-    if (params.grayscale === true) {
-      pipeline = pipeline.grayscale()
+      // Remove background via remove.bg
+      const removeBgForm = new FormData()
+      removeBgForm.append('image_file', file)
+      removeBgForm.append('size', 'auto')
+      const removeBgRes = await fetch('https://api.remove.bg/v1.0/removebg', {
+        method: 'POST',
+        headers: { 'X-Api-Key': removeBgKey },
+        body: removeBgForm,
+      })
+      if (!removeBgRes.ok) {
+        const errText = await removeBgRes.text()
+        let errMsg = `remove.bg fout (${removeBgRes.status})`
+        try { errMsg = JSON.parse(errText).errors?.[0]?.title || errMsg } catch {}
+        return NextResponse.json({ error: errMsg }, { status: 400 })
+      }
+
+      const subjectPng = Buffer.from(await removeBgRes.arrayBuffer())
+      const meta = await sharp(subjectPng).metadata()
+      const w = meta.width || 1080
+      const h = meta.height || 1080
+
+      const bgBuffer = await generateBgBuffer(params, w, h)
+
+      const result = await (sharp(bgBuffer)
+        .composite([{ input: subjectPng, blend: 'over' }])
+        .jpeg({ quality: 92 })
+        .toBuffer() as Promise<Buffer>)
+
+      return NextResponse.json({
+        image: result.toString('base64'),
+        uitleg: params.uitleg || '',
+        params,
+      })
     }
 
-    if (params.gamma && Math.abs(params.gamma - 1.0) > 0.01) {
-      pipeline = pipeline.gamma(Math.max(0.1, Math.min(3.0, params.gamma)))
+    // ── Color grade ────────────────────────────────────────────────────────
+    let pipeline = sharp(buffer)
+
+    if (params.grayscale === true) pipeline = pipeline.grayscale()
+
+    if (params.gamma && Math.abs(Number(params.gamma) - 1.0) > 0.01) {
+      pipeline = pipeline.gamma(Math.max(0.1, Math.min(3.0, Number(params.gamma))))
     }
 
     pipeline = pipeline.modulate({
@@ -100,7 +176,7 @@ Interpreteer de opdracht intelligent (NL/EN):
       pipeline = pipeline.sharpen({ sigma: Math.min(3, Number(params.sharpness) * 0.7) })
     }
 
-    const result = await pipeline.jpeg({ quality: 92 }).toBuffer()
+    const result = await (pipeline.jpeg({ quality: 92 }).toBuffer() as Promise<Buffer>)
 
     return NextResponse.json({
       image: result.toString('base64'),
@@ -109,6 +185,7 @@ Interpreteer de opdracht intelligent (NL/EN):
     })
   } catch (e: any) {
     const msg = e?.error?.error?.message || e?.message || 'Onbekende fout'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const httpStatus = e?.status === 401 ? 401 : e?.status === 429 ? 429 : 500
+    return NextResponse.json({ error: msg }, { status: httpStatus })
   }
 }

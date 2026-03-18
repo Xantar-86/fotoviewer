@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const apiKey = formData.get('api_key') as string
+    const apiKey = ((formData.get('api_key') as string) || '').trim()
 
     if (!apiKey) return NextResponse.json({ error: 'Anthropic API sleutel vereist' }, { status: 400 })
     if (!file) return NextResponse.json({ error: 'Geen bestand ontvangen' }, { status: 400 })
@@ -74,6 +74,7 @@ Focus op: optimale helderheid, levendige aantrekkelijke kleuren, scherpe details
     })
   } catch (e: any) {
     const msg = e?.error?.error?.message || e?.message || 'Onbekende fout'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const httpStatus = e?.status === 401 ? 401 : e?.status === 429 ? 429 : 500
+    return NextResponse.json({ error: msg }, { status: httpStatus })
   }
 }

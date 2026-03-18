@@ -176,12 +176,14 @@ export async function faceBlur(
 export async function promptEdit(
   file: File,
   apiKey: string,
-  prompt: string
+  prompt: string,
+  removeBgKey = ''
 ): Promise<{ image: string; uitleg: string; params: Record<string, unknown> }> {
   const form = new FormData()
   form.append('file', file)
   form.append('api_key', apiKey)
   form.append('prompt', prompt)
+  form.append('remove_bg_key', removeBgKey)
   const res = await api.post('/api/ai/prompt-edit', form)
   return res.data
 }

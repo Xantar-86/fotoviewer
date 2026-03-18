@@ -5,8 +5,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { api_key, platform = 'FeetFinder', theme = 'elegant' } = body
+    const apiKey = (api_key || '').trim()
 
-    const client = new Anthropic({ apiKey: api_key })
+    const client = new Anthropic({ apiKey })
     const response = await client.messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 2048,
@@ -34,6 +35,8 @@ Geef precies 10 ideeën. Alles in het Nederlands.`,
     if (match) return NextResponse.json({ ideas: JSON.parse(match[0]).slice(0, 10) })
     return NextResponse.json({ ideas: [] })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    const msg = e?.error?.error?.message || e?.message || 'Onbekende fout'
+    const httpStatus = e?.status === 401 ? 401 : e?.status === 429 ? 429 : 500
+    return NextResponse.json({ error: msg }, { status: httpStatus })
   }
 }

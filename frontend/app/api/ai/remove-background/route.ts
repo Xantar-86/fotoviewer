@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const apiKey = formData.get('api_key') as string // remove.bg API key
+    const apiKey = ((formData.get('api_key') as string) || '').trim() // remove.bg API key
     const bgColor = (formData.get('bg_color') as string) || ''
 
     if (!file) return NextResponse.json({ error: 'Geen bestand ontvangen' }, { status: 400 })
@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
     // Return transparent PNG
     return NextResponse.json({ image: resultBuffer.toString('base64'), format: 'png' })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Onbekende fout' }, { status: 500 })
+    const msg = e?.error?.error?.message || e?.message || 'Onbekende fout'
+    const httpStatus = e?.status === 401 ? 401 : e?.status === 429 ? 429 : 500
+    return NextResponse.json({ error: msg }, { status: httpStatus })
   }
 }

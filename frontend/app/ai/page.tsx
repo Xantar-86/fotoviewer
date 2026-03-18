@@ -61,6 +61,13 @@ function useCopyToClipboard() {
   return { copied, copy }
 }
 
+function getErrorMsg(e: any, fallback: string): string {
+  const status = e?.response?.status
+  if (status === 401) return 'Ongeldige API sleutel — controleer je sleutel bij Instellingen'
+  if (status === 429) return 'Te veel verzoeken — wacht even en probeer opnieuw'
+  return e?.response?.data?.error || e?.message || fallback
+}
+
 export default function AIPage() {
   const [apiKey, setApiKey] = useState('')
   const [activeTab, setActiveTab] = useState<Tab>('analyze')
@@ -103,13 +110,15 @@ export default function AIPage() {
   // Load stored API key
   useEffect(() => {
     const stored = localStorage.getItem('anthropic_api_key')
-    if (stored) setApiKey(stored)
+    if (stored) setApiKey(stored.trim())
     const storedRemoveBgKey = localStorage.getItem('remove_bg_api_key') || ''
     if (storedRemoveBgKey) setRemoveBgKey(storedRemoveBgKey)
   }, [])
 
   const saveApiKey = () => {
-    localStorage.setItem('anthropic_api_key', apiKey)
+    const trimmed = apiKey.trim()
+    setApiKey(trimmed)
+    localStorage.setItem('anthropic_api_key', trimmed)
     toast.success('API sleutel opgeslagen')
   }
 
@@ -139,7 +148,7 @@ export default function AIPage() {
       setAnalysis(result)
       toast.success('Analyse voltooid')
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || e.message || 'Analyse mislukt')
+      toast.error(getErrorMsg(e, 'Analyse mislukt'))
     } finally {
       setLoading(false)
     }
@@ -156,7 +165,7 @@ export default function AIPage() {
       setTitles(result.titles)
       toast.success('Titels gegenereerd')
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || e.message || 'Titels genereren mislukt')
+      toast.error(getErrorMsg(e, 'Titels genereren mislukt'))
     } finally {
       setLoading(false)
     }
@@ -173,7 +182,7 @@ export default function AIPage() {
       setIdeas(result.ideas)
       toast.success('Ideeën gegenereerd')
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || e.message || 'Ideeën genereren mislukt')
+      toast.error(getErrorMsg(e, 'Ideeën genereren mislukt'))
     } finally {
       setLoading(false)
     }
@@ -190,7 +199,7 @@ export default function AIPage() {
       setTemplates(result.templates)
       toast.success('Sjablonen gegenereerd')
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || e.message || 'Sjablonen genereren mislukt')
+      toast.error(getErrorMsg(e, 'Sjablonen genereren mislukt'))
     } finally {
       setLoading(false)
     }
@@ -207,7 +216,7 @@ export default function AIPage() {
       setSmartEnhanceResult(result)
       toast.success('Foto verbeterd met AI!')
     } catch (e: any) {
-      toast.error(e.response?.data?.error || e.message || 'Verbeteren mislukt')
+      toast.error(getErrorMsg(e, 'Verbeteren mislukt'))
     } finally {
       setEditLoading(null)
     }
@@ -223,7 +232,7 @@ export default function AIPage() {
       setRemoveBgResult(result)
       toast.success('Achtergrond verwijderd!')
     } catch (e: any) {
-      toast.error(e.response?.data?.error || e.message || 'Verwijderen mislukt')
+      toast.error(getErrorMsg(e, 'Verwijderen mislukt'))
     } finally {
       setEditLoading(null)
     }
@@ -242,7 +251,7 @@ export default function AIPage() {
       if (result.facesDetected === 0) toast('Geen gezichten gevonden in de foto', { icon: '🔍' })
       else toast.success(`${result.facesDetected} gezicht${result.facesDetected > 1 ? 'en' : ''} geblurd!`)
     } catch (e: any) {
-      toast.error(e.response?.data?.error || e.message || 'Gezichtsdetectie mislukt')
+      toast.error(getErrorMsg(e, 'Gezichtsdetectie mislukt'))
     } finally {
       setEditLoading(null)
     }
@@ -260,11 +269,11 @@ export default function AIPage() {
     setEditLoading('prompt')
     setPromptEditResult(null)
     try {
-      const result = await promptEdit(file, apiKey, editPromptText)
+      const result = await promptEdit(file, apiKey, editPromptText, removeBgKey)
       setPromptEditResult(result)
       toast.success('Foto bewerkt via AI!')
     } catch (e: any) {
-      toast.error(e.response?.data?.error || e.message || 'Bewerking mislukt')
+      toast.error(getErrorMsg(e, 'Bewerking mislukt'))
     } finally {
       setEditLoading(null)
     }
@@ -789,7 +798,7 @@ export default function AIPage() {
                     onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) handlePromptEdit() }}
                   />
                   <div className="flex gap-2 flex-wrap mb-3">
-                    {['Warmer', 'Vintage', 'Levendig', 'Zwart-wit', 'Dramatisch', 'Zachter', 'Scherper', 'Donkerder'].map((s) => (
+                    {['Warmer', 'Vintage', 'Levendig', 'Zwart-wit', 'Dramatisch', 'Zachter', 'Witte achtergrond', 'Zwarte achtergrond', 'Studio achtergrond', 'Roze gradient achtergrond', 'Strand achtergrond'].map((s) => (
                       <button
                         key={s}
                         onClick={() => setEditPromptText(s.toLowerCase())}
