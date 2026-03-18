@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const apiKey = ((formData.get('api_key') as string) || '').trim()
     const removeBgKey = ((formData.get('remove_bg_key') as string) || '').trim()
+    const stabilityKey = ((formData.get('stability_key') as string) || '').trim()
     const prompt = (formData.get('prompt') as string || '').trim()
 
     if (!apiKey) return NextResponse.json({ error: 'Anthropic API sleutel vereist' }, { status: 400 })
@@ -82,20 +83,15 @@ Als de opdracht over KLEUR/FILTER/HELDERHEID gaat → type "color_grade":
   "uitleg": "Korte NL uitleg"
 }
 
-Als de opdracht over de ACHTERGROND gaat (andere achtergrond, kleur achtergrond, studio, etc.) → type "background_change":
+Als de opdracht over de ACHTERGROND gaat (andere achtergrond, locatie, sfeer, natuur, etc.) → type "background_change":
 {
   "type": "background_change",
-  "bg_type": "solid" of "gradient",
-  "bg_color": "#hexcode" (voor solid),
-  "bg_from": "#hexcode", "bg_to": "#hexcode", "bg_direction": "tb" of "lr" (voor gradient),
-  "uitleg": "Korte NL uitleg van de gekozen achtergrond"
+  "background_prompt": "Detailed English description for photorealistic AI background generation, e.g. 'tropical beach with clear turquoise water, white sand, palm trees, golden hour sunlight'",
+  "uitleg": "Korte NL uitleg"
 }
 
-Kleur mapping voor achtergrond:
-wit/white=#ffffff, zwart/black=#000000, roze/pink=#ffb6c1, paars/purple=#6d28d9
-blauw/blue=#1e40af, rood/red=#dc2626, goud/gold=#d97706, beige=#f5e6d3
-grijs/gray=#6b7280, groen/green=#059669, strand/beach=gradient #87CEEB→#f5e6d3
-studio=gradient #1a1a2e→#2d1b69, roze gradient=#ff6b9d→#c084fc, zonsondergang=#f97316→#7c3aed
+Vertaal de achtergrond-opdracht altijd naar een gedetailleerde Engelse scènebeschrijving voor background_prompt.
+Voorbeelden: strand→beach scene, kerst→Christmas winter scene with snow, studio→professional photography studio with soft lighting, zonsondergang→romantic sunset with warm golden colors.
 
 Filter voorbeelden:
 warmer=hue+8,sat1.1, koeler=hue-8, vintage=sat0.65,gamma1.15,hue6
@@ -114,13 +110,53 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
 
     // ── Background change ──────────────────────────────────────────────────
     if (params.type === 'background_change') {
+      // Route 1: Stability AI → photorealistic background
+      if (stabilityKey) {
+        const stabForm = new FormData()
+        stabForm.append(
+          'subject_image',
+          new Blob([buffer], { type: file.type || 'image/jpeg' }),
+          'subject.jpg'
+        )
+        stabForm.append('background_prompt', params.background_prompt || prompt)
+        stabForm.append('foreground_ratio', '0.9')
+        stabForm.append('output_format', 'jpeg')
+
+        const stabRes = await fetch(
+          'https://api.stability.ai/v2beta/stable-image/edit/replace-background-and-relight',
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${stabilityKey}`, Accept: 'image/*' },
+            body: stabForm,
+          }
+        )
+        if (!stabRes.ok) {
+          let errMsg = `Stability AI fout (${stabRes.status})`
+          try {
+            const ct = stabRes.headers.get('content-type') || ''
+            if (ct.includes('json')) {
+              const err = await stabRes.json()
+              errMsg = err.message || err.errors?.[0]?.message || errMsg
+            }
+          } catch {}
+          return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
+        }
+
+        const imageBuffer = Buffer.from(await stabRes.arrayBuffer())
+        return NextResponse.json({
+          image: imageBuffer.toString('base64'),
+          uitleg: params.uitleg || '',
+          params,
+        })
+      }
+
+      // Route 2: remove.bg + solid/gradient fallback
       if (!removeBgKey) {
         return NextResponse.json({
-          error: 'Achtergrond wijzigen vereist een remove.bg API sleutel. Voeg deze gratis toe bij Instellingen (50 foto\'s/maand).',
+          error: 'Achtergrond wijzigen vereist een Stability AI sleutel (fotorealistisch) of remove.bg sleutel. Voeg toe bij Instellingen.',
         }, { status: 400 })
       }
 
-      // Remove background via remove.bg
       const removeBgForm = new FormData()
       removeBgForm.append('image_file', file)
       removeBgForm.append('size', 'auto')
@@ -141,7 +177,8 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
       const w = meta.width || 1080
       const h = meta.height || 1080
 
-      const bgBuffer = await generateBgBuffer(params, w, h)
+      // Fallback: white background since new prompt format no longer has bg_color
+      const bgBuffer = await (sharp({ create: { width: w, height: h, channels: 3, background: { r: 255, g: 255, b: 255 } } }).png().toBuffer() as Promise<Buffer>)
 
       const result = await (sharp(bgBuffer)
         .composite([{ input: subjectPng, blend: 'over' }])

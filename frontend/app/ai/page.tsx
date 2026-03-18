@@ -16,7 +16,6 @@ import {
   CheckCircle,
   Key,
   RefreshCw,
-  // ChevronDown unused
   Wand2,
   Image as ImageIcon,
   ScanFace,
@@ -32,6 +31,7 @@ import {
   removeBackground,
   faceBlur,
   promptEdit,
+  generateBackground,
 } from '@/lib/api'
 
 type Tab = 'analyze' | 'titles' | 'ideas' | 'replies' | 'edit'
@@ -105,7 +105,10 @@ export default function AIPage() {
   const [editPromptText, setEditPromptText] = useState('')
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgTransparent, setBgTransparent] = useState(false)
-  const [editLoading, setEditLoading] = useState<'enhance' | 'removebg' | 'faceblur' | 'prompt' | null>(null)
+  const [editLoading, setEditLoading] = useState<'enhance' | 'removebg' | 'faceblur' | 'prompt' | 'genbg' | null>(null)
+  const [stabilityKey, setStabilityKey] = useState('')
+  const [genBgPrompt, setGenBgPrompt] = useState('')
+  const [genBgResult, setGenBgResult] = useState<{ image: string; uitleg: string } | null>(null)
 
   // Load stored API key
   useEffect(() => {
@@ -113,6 +116,8 @@ export default function AIPage() {
     if (stored) setApiKey(stored.trim())
     const storedRemoveBgKey = localStorage.getItem('remove_bg_api_key') || ''
     if (storedRemoveBgKey) setRemoveBgKey(storedRemoveBgKey)
+    const storedStabilityKey = localStorage.getItem('stability_api_key') || ''
+    if (storedStabilityKey) setStabilityKey(storedStabilityKey)
   }, [])
 
   const saveApiKey = () => {
@@ -269,11 +274,28 @@ export default function AIPage() {
     setEditLoading('prompt')
     setPromptEditResult(null)
     try {
-      const result = await promptEdit(file, apiKey, editPromptText, removeBgKey)
+      const result = await promptEdit(file, apiKey, editPromptText, removeBgKey, stabilityKey)
       setPromptEditResult(result)
       toast.success('Foto bewerkt via AI!')
     } catch (e: any) {
       toast.error(getErrorMsg(e, 'Bewerking mislukt'))
+    } finally {
+      setEditLoading(null)
+    }
+  }
+
+  const handleGenerateBackground = async () => {
+    if (!file) { toast.error('Selecteer eerst een foto'); return }
+    if (!stabilityKey) { toast.error('Vul je Stability AI sleutel in bij Instellingen'); return }
+    if (!genBgPrompt.trim()) { toast.error('Typ een achtergrond omschrijving'); return }
+    setEditLoading('genbg')
+    setGenBgResult(null)
+    try {
+      const result = await generateBackground(file, stabilityKey, genBgPrompt)
+      setGenBgResult(result)
+      toast.success('AI achtergrond gegenereerd!')
+    } catch (e: any) {
+      toast.error(getErrorMsg(e, 'Genereren mislukt'))
     } finally {
       setEditLoading(null)
     }
@@ -788,17 +810,19 @@ export default function AIPage() {
                     <h3 className="font-semibold text-white text-sm">Bewerken via Prompt</h3>
                     <span className="badge text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/30">Claude AI</span>
                   </div>
-                  <p className="text-xs text-white/40 mb-3">Typ een opdracht en Claude past de foto aan. Bijv: &ldquo;maak warmer en levendiger&rdquo;, &ldquo;vintage stijl&rdquo;, &ldquo;zwart-wit&rdquo;</p>
+                  <p className="text-xs text-white/40 mb-3">
+                    Typ een opdracht. Filters: &ldquo;warmer&rdquo;, &ldquo;vintage&rdquo;, &ldquo;zwart-wit&rdquo;. Achtergrond (fotorealistisch met Stability AI): &ldquo;strand&rdquo;, &ldquo;kerstsfeer&rdquo;, &ldquo;studio&rdquo;, &ldquo;bos&rdquo;.
+                  </p>
                   <textarea
                     value={editPromptText}
                     onChange={(e) => setEditPromptText(e.target.value)}
-                    placeholder="Bijv: maak de foto warmer en levendiger, voeg een vintage filter toe, maak dramatischer..."
+                    placeholder="Bijv: maak warmer en levendiger, vintage filter, strand achtergrond, kerstsfeer..."
                     rows={3}
                     className="input-dark w-full text-sm resize-none mb-3"
                     onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) handlePromptEdit() }}
                   />
                   <div className="flex gap-2 flex-wrap mb-3">
-                    {['Warmer', 'Vintage', 'Levendig', 'Zwart-wit', 'Dramatisch', 'Zachter', 'Witte achtergrond', 'Zwarte achtergrond', 'Studio achtergrond', 'Roze gradient achtergrond', 'Strand achtergrond'].map((s) => (
+                    {['Warmer', 'Vintage', 'Levendig', 'Zwart-wit', 'Dramatisch', 'Zachter', 'Strand achtergrond', 'Kerstsfeer achtergrond', 'Studio achtergrond', 'Zonsondergang achtergrond', 'Bos achtergrond'].map((s) => (
                       <button
                         key={s}
                         onClick={() => setEditPromptText(s.toLowerCase())}
@@ -876,6 +900,62 @@ export default function AIPage() {
                   >
                     {editLoading === 'removebg' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
                     {editLoading === 'removebg' ? 'Achtergrond verwijderen...' : 'Achtergrond Verwijderen'}
+                  </button>
+                </div>
+
+                {/* Generative AI Background */}
+                <div className="glass-card p-5 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-violet-400" />
+                    <h3 className="font-semibold text-white text-sm">AI Achtergrond Genereren</h3>
+                    <span className="badge text-[10px] bg-violet-500/20 text-violet-300 border border-violet-500/30">Stability AI</span>
+                  </div>
+                  <p className="text-xs text-white/40 mb-3">
+                    Vervang de achtergrond met een fotorealistische AI-scène. Bijv: &ldquo;tropisch strand&rdquo;, &ldquo;kerstsfeer&rdquo;, &ldquo;professionele studio&rdquo;.
+                  </p>
+                  {!stabilityKey && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-3">
+                      <p className="text-xs text-yellow-300/80">
+                        Vereist een Stability AI sleutel. Voeg toe bij{' '}
+                        <a href="/settings" className="text-yellow-400 underline">Instellingen</a>.
+                      </p>
+                    </div>
+                  )}
+                  <textarea
+                    value={genBgPrompt}
+                    onChange={(e) => setGenBgPrompt(e.target.value)}
+                    placeholder="Beschrijf de gewenste achtergrond..."
+                    rows={2}
+                    className="input-dark w-full text-sm resize-none mb-3"
+                  />
+                  <div className="flex gap-1.5 flex-wrap mb-3">
+                    {[
+                      'Tropisch strand met golven',
+                      'Kerstsfeer met sneeuw',
+                      'Professionele fotostudio',
+                      'Romantische zonsondergang',
+                      'Mistig bos',
+                      'Stad bij nacht',
+                      'Bloemenweide',
+                      'Luxe hotel lobby',
+                    ].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setGenBgPrompt(s)}
+                        className="text-xs px-2.5 py-1 rounded-lg glass-button text-white/50 hover:text-violet-300 transition-all"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleGenerateBackground}
+                    disabled={!file || !stabilityKey || !genBgPrompt.trim() || editLoading !== null}
+                    className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+                    style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+                  >
+                    {editLoading === 'genbg' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {editLoading === 'genbg' ? 'AI genereert achtergrond...' : 'Achtergrond Genereren met AI'}
                   </button>
                 </div>
               </div>
@@ -1011,6 +1091,33 @@ export default function AIPage() {
                         className="max-w-full max-h-64 object-contain"
                       />
                     </div>
+                  </div>
+                )}
+
+                {/* Generative background result */}
+                {genBgResult && (
+                  <div className="glass-card p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-violet-300 flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5" /> AI Achtergrond
+                      </h4>
+                      <button
+                        onClick={() => downloadResult(genBgResult.image, 'jpeg', 'ai-achtergrond')}
+                        className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                      >
+                        <Download className="w-3 h-3" /> Downloaden
+                      </button>
+                    </div>
+                    <img
+                      src={`data:image/jpeg;base64,${genBgResult.image}`}
+                      alt="AI achtergrond"
+                      className="w-full rounded-xl object-contain max-h-64 mb-3"
+                    />
+                    {genBgResult.uitleg && (
+                      <div className="bg-violet-500/10 border border-violet-500/15 rounded-xl p-3">
+                        <p className="text-xs text-violet-300 leading-relaxed">✨ {genBgResult.uitleg}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
