@@ -8,21 +8,23 @@ function getSupabase() {
   )
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
   const supabase = getSupabase()
   const { error } = await supabase
     .from('bestellingen')
     .update({ status })
-    .eq('id', parseInt(params.id))
+    .eq('id', parseInt(id))
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ message: 'Status bijgewerkt' })
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = getSupabase()
-  const { error } = await supabase.from('bestellingen').delete().eq('id', parseInt(params.id))
+  const { error } = await supabase.from('bestellingen').delete().eq('id', parseInt(id))
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ message: 'Verwijderd' })
 }
