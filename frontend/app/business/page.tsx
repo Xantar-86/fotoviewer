@@ -439,7 +439,7 @@ export default function BusinessPage() {
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.9, y: 20 }}
                     className="glass-card p-6 w-full max-w-md"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="font-bold text-white">Inkomen toevoegen</h3>
@@ -602,7 +602,7 @@ export default function BusinessPage() {
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.9, y: 20 }}
                     className="glass-card p-6 w-full max-w-md"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="font-bold text-white">Bestelling toevoegen</h3>

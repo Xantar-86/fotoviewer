@@ -162,6 +162,30 @@ export async function generateReplyTemplates(
   return res.data
 }
 
+export async function smartEnhancePhoto(
+  file: File,
+  apiKey: string
+): Promise<{ image: string; uitleg: string; params: { brightness: number; saturation: number; sharpness: number } }> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('api_key', apiKey)
+  const res = await api.post('/api/ai/smart-enhance', form)
+  return res.data
+}
+
+export async function removeBackground(
+  file: File,
+  removeBgApiKey: string,
+  bgColor = ''
+): Promise<{ image: string; format: string }> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('api_key', removeBgApiKey)
+  form.append('bg_color', bgColor)
+  const res = await api.post('/api/ai/remove-background', form)
+  return res.data
+}
+
 // ─── Business ────────────────────────────────────────────────────────────────
 
 export interface IncomeItem {

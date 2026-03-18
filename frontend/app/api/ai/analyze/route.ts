@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
+function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' {
+  const t = (file.type || '').toLowerCase()
+  if (t === 'image/png') return 'image/png'
+  if (t === 'image/gif') return 'image/gif'
+  if (t === 'image/webp') return 'image/webp'
+  return 'image/jpeg'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -8,9 +16,11 @@ export async function POST(request: NextRequest) {
     const apiKey = formData.get('api_key') as string
 
     if (!apiKey) return NextResponse.json({ error: 'API sleutel vereist' }, { status: 400 })
+    if (!file) return NextResponse.json({ error: 'Geen bestand ontvangen' }, { status: 400 })
 
     const buffer = Buffer.from(await file.arrayBuffer())
     const b64 = buffer.toString('base64')
+    const mediaType = detectMediaType(file)
 
     const client = new Anthropic({ apiKey })
     const response = await client.messages.create({
@@ -21,7 +31,7 @@ export async function POST(request: NextRequest) {
         content: [
           {
             type: 'image',
-            source: { type: 'base64', media_type: 'image/jpeg', data: b64 },
+            source: { type: 'base64', media_type: mediaType, data: b64 },
           },
           {
             type: 'text',
@@ -46,6 +56,7 @@ Gebruik Nederlandse hashtags die relevant zijn voor de foto. Wees professioneel 
     if (match) return NextResponse.json(JSON.parse(match[0]))
     return NextResponse.json({ beschrijving: text, hashtags: [], stemming: '', tips: [] })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    const msg = e?.error?.error?.message || e?.message || 'Onbekende fout'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

@@ -22,17 +22,21 @@ export default function SettingsPage() {
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [watermarkText, setWatermarkText] = useState('© FeetBusiness')
+  const [removeBgKey, setRemoveBgKey] = useState('')
 
   useEffect(() => {
     const storedKey = localStorage.getItem('anthropic_api_key') || ''
     const storedWatermark = localStorage.getItem('default_watermark') || '© FeetBusiness'
+    const storedRemoveBgKey = localStorage.getItem('remove_bg_api_key') || ''
     setApiKey(storedKey)
     setWatermarkText(storedWatermark)
+    setRemoveBgKey(storedRemoveBgKey)
   }, [])
 
   const saveSettings = () => {
     localStorage.setItem('anthropic_api_key', apiKey)
     localStorage.setItem('default_watermark', watermarkText)
+    localStorage.setItem('remove_bg_api_key', removeBgKey)
     toast.success('Instellingen opgeslagen')
   }
 
@@ -124,11 +128,62 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* API Status */}
+        {/* remove.bg API Key */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
+          className="glass-card p-6"
+        >
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 bg-green-500/15 rounded-xl flex items-center justify-center">
+              <Palette className="w-4.5 h-4.5 text-green-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">remove.bg API Sleutel</h3>
+              <p className="text-xs text-white/40">Vereist voor achtergrond verwijderen in AI Studio</p>
+            </div>
+            {removeBgKey && (
+              <span className="ml-auto badge-green text-xs flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" /> Geconfigureerd
+              </span>
+            )}
+          </div>
+
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1">
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={removeBgKey}
+                onChange={(e) => setRemoveBgKey(e.target.value)}
+                placeholder="Plak hier je remove.bg API sleutel"
+                className="input-dark w-full font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="bg-green-500/8 border border-green-500/15 rounded-xl p-3">
+            <p className="text-xs text-white/40 leading-relaxed">
+              Gratis account via{' '}
+              <a
+                href="https://www.remove.bg/dashboard#api-key"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-400 hover:text-green-300 inline-flex items-center gap-0.5"
+              >
+                remove.bg/dashboard
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              {' '}— 50 gratis verwijderingen per maand.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* API Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="glass-card p-6"
         >
           <div className="flex items-center gap-3 mb-5">
@@ -162,7 +217,7 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.15 }}
           className="glass-card p-6"
         >
           <div className="flex items-center gap-3 mb-5">
@@ -188,7 +243,7 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0.2 }}
           className="glass-card p-6"
         >
           <div className="flex items-center gap-3 mb-4">
@@ -228,7 +283,7 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
           className="glass-card p-6"
         >
           <div className="flex items-center gap-3 mb-4">
@@ -257,7 +312,7 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0.3 }}
         >
           <button
             onClick={saveSettings}

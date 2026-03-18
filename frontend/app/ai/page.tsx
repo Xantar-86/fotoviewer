@@ -17,15 +17,19 @@ import {
   Key,
   ChevronDown,
   RefreshCw,
+  Wand2,
+  Image as ImageIcon,
 } from 'lucide-react'
 import {
   analyzePhoto,
   generateTitles,
   generateSessionIdeas,
   generateReplyTemplates,
+  smartEnhancePhoto,
+  removeBackground,
 } from '@/lib/api'
 
-type Tab = 'analyze' | 'titles' | 'ideas' | 'replies'
+type Tab = 'analyze' | 'titles' | 'ideas' | 'replies' | 'edit'
 
 const PLATFORMS = ['FeetFinder', 'OnlyFans', 'Fansly', 'Instagram', 'Patreon']
 const THEMES = ['elegant', 'speels', 'sensueel', 'romantisch', 'artistiek', 'sportief', 'zomers', 'luxe']
@@ -80,10 +84,20 @@ export default function AIPage() {
   const [scenario, setScenario] = useState('Prijsvraag')
   const [templates, setTemplates] = useState<Array<{ naam: string; bericht: string; toon: string }>>([])
 
+  // Edit tab state
+  const [removeBgKey, setRemoveBgKey] = useState('')
+  const [smartEnhanceResult, setSmartEnhanceResult] = useState<{ image: string; uitleg: string; params: any } | null>(null)
+  const [removeBgResult, setRemoveBgResult] = useState<{ image: string; format: string } | null>(null)
+  const [bgColor, setBgColor] = useState('#ffffff')
+  const [bgTransparent, setBgTransparent] = useState(false)
+  const [editLoading, setEditLoading] = useState<'enhance' | 'removebg' | null>(null)
+
   // Load stored API key
   useEffect(() => {
     const stored = localStorage.getItem('anthropic_api_key')
     if (stored) setApiKey(stored)
+    const storedRemoveBgKey = localStorage.getItem('remove_bg_api_key') || ''
+    if (storedRemoveBgKey) setRemoveBgKey(storedRemoveBgKey)
   }, [])
 
   const saveApiKey = () => {
@@ -174,11 +188,52 @@ export default function AIPage() {
     }
   }
 
+  const handleSmartEnhance = async () => {
+    if (!file || !apiKey) {
+      toast.error(!file ? 'Selecteer eerst een foto' : 'Vul je Anthropic API sleutel in')
+      return
+    }
+    setEditLoading('enhance')
+    try {
+      const result = await smartEnhancePhoto(file, apiKey)
+      setSmartEnhanceResult(result)
+      toast.success('Foto verbeterd met AI!')
+    } catch (e: any) {
+      toast.error(e.response?.data?.error || e.message || 'Verbeteren mislukt')
+    } finally {
+      setEditLoading(null)
+    }
+  }
+
+  const handleRemoveBackground = async () => {
+    if (!file) { toast.error('Selecteer eerst een foto'); return }
+    if (!removeBgKey) { toast.error('Vul je remove.bg API sleutel in bij Instellingen'); return }
+    setEditLoading('removebg')
+    try {
+      const color = bgTransparent ? '' : bgColor
+      const result = await removeBackground(file, removeBgKey, color)
+      setRemoveBgResult(result)
+      toast.success('Achtergrond verwijderd!')
+    } catch (e: any) {
+      toast.error(e.response?.data?.error || e.message || 'Verwijderen mislukt')
+    } finally {
+      setEditLoading(null)
+    }
+  }
+
+  const downloadResult = (b64: string, format: string, prefix: string) => {
+    const link = document.createElement('a')
+    link.href = `data:image/${format};base64,${b64}`
+    link.download = `${prefix}_${Date.now()}.${format === 'jpeg' ? 'jpg' : 'png'}`
+    link.click()
+  }
+
   const tabs = [
     { id: 'analyze' as Tab, icon: Sparkles, label: "Foto's analyseren" },
     { id: 'titles' as Tab, icon: FileText, label: 'Titels genereren' },
     { id: 'ideas' as Tab, icon: Lightbulb, label: 'Sessie-ideeën' },
     { id: 'replies' as Tab, icon: MessageSquare, label: 'Antwoordsjablonen' },
+    { id: 'edit' as Tab, icon: Wand2, label: 'AI Bewerken' },
   ]
 
   return (
@@ -604,6 +659,185 @@ export default function AIPage() {
                 </div>
               </div>
             )}
+          </motion.div>
+        )}
+        {/* AI BEWERKEN TAB */}
+        {activeTab === 'edit' && (
+          <motion.div key="edit" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Upload */}
+              <div>
+                <div
+                  {...getRootProps()}
+                  className={`glass-card h-64 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
+                    isDragActive ? 'border-purple-500/50 bg-purple-500/5' : 'hover:border-purple-500/25'
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="max-h-56 max-w-full rounded-lg object-contain" />
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="w-8 h-8 text-purple-400 mx-auto mb-3" />
+                      <p className="text-white/50 text-sm">Sleep foto hierheen</p>
+                      <p className="text-white/25 text-xs mt-1">of klik om te bladeren</p>
+                    </div>
+                  )}
+                </div>
+                {previewUrl && <p className="text-xs text-white/30 mt-2 text-center">{file?.name}</p>}
+
+                {/* Smart Enhance */}
+                <div className="glass-card p-5 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wand2 className="w-4 h-4 text-purple-400" />
+                    <h3 className="font-semibold text-white text-sm">Smart Auto-Verbeteren</h3>
+                    <span className="badge-purple text-[10px]">Claude AI</span>
+                  </div>
+                  <p className="text-xs text-white/40 mb-4">Claude analyseert je foto en past automatisch de optimale helderheid, kleurverzadiging en scherpte toe.</p>
+                  <button
+                    onClick={handleSmartEnhance}
+                    disabled={!file || !apiKey || editLoading !== null}
+                    className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+                  >
+                    {editLoading === 'enhance' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                    {editLoading === 'enhance' ? 'AI analyseert...' : 'Verbeteren met AI'}
+                  </button>
+                </div>
+
+                {/* Remove Background */}
+                <div className="glass-card p-5 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ImageIcon className="w-4 h-4 text-green-400" />
+                    <h3 className="font-semibold text-white text-sm">Achtergrond Verwijderen</h3>
+                    <span className="badge-green text-[10px]">remove.bg</span>
+                  </div>
+                  {!removeBgKey ? (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-3">
+                      <p className="text-xs text-yellow-300/80">
+                        Vereist een remove.bg API sleutel. Voeg deze toe bij{' '}
+                        <a href="/settings" className="text-yellow-400 underline">Instellingen</a>
+                        . Gratis: 50 foto&apos;s/maand.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <label className="text-xs text-white/60">Nieuwe achtergrond:</label>
+                        <button
+                          onClick={() => setBgTransparent(!bgTransparent)}
+                          className={`text-xs px-3 py-1 rounded-lg transition-all ${bgTransparent ? 'bg-purple-600/40 text-purple-300 border border-purple-500/30' : 'glass-button text-white/50'}`}
+                        >
+                          Transparant
+                        </button>
+                        {!bgTransparent && (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={bgColor}
+                              onChange={(e) => setBgColor(e.target.value)}
+                              className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent"
+                            />
+                            <span className="text-xs text-white/40 font-mono">{bgColor}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 flex-wrap mb-1">
+                        {['#ffffff', '#000000', '#f5e6d3', '#1a1a2e', '#e8d5b7', '#2d1b69'].map((c) => (
+                          <button
+                            key={c}
+                            onClick={() => { setBgColor(c); setBgTransparent(false) }}
+                            className="w-7 h-7 rounded-lg border-2 transition-all"
+                            style={{ backgroundColor: c, borderColor: bgColor === c && !bgTransparent ? '#a855f7' : 'rgba(255,255,255,0.1)' }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleRemoveBackground}
+                    disabled={!file || !removeBgKey || editLoading !== null}
+                    className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+                    style={{ background: removeBgKey ? undefined : 'rgba(255,255,255,0.05)' }}
+                  >
+                    {editLoading === 'removebg' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                    {editLoading === 'removebg' ? 'Achtergrond verwijderen...' : 'Achtergrond Verwijderen'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Results */}
+              <div className="flex flex-col gap-4">
+                {/* Smart enhance result */}
+                {smartEnhanceResult ? (
+                  <div className="glass-card p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-purple-300 flex items-center gap-2">
+                        <Wand2 className="w-3.5 h-3.5" /> Verbeterd Resultaat
+                      </h4>
+                      <button
+                        onClick={() => downloadResult(smartEnhanceResult.image, 'jpeg', 'verbeterd')}
+                        className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                      >
+                        <Copy className="w-3 h-3" /> Downloaden
+                      </button>
+                    </div>
+                    <img
+                      src={`data:image/jpeg;base64,${smartEnhanceResult.image}`}
+                      alt="Verbeterd"
+                      className="w-full rounded-xl object-contain max-h-64 mb-3"
+                    />
+                    {smartEnhanceResult.uitleg && (
+                      <div className="bg-purple-500/10 border border-purple-500/15 rounded-xl p-3">
+                        <p className="text-xs text-purple-300 leading-relaxed">💡 {smartEnhanceResult.uitleg}</p>
+                      </div>
+                    )}
+                    <div className="flex gap-3 mt-3 text-xs text-white/30">
+                      <span>☀️ Helderheid: {Math.round((smartEnhanceResult.params.brightness - 1) * 100 + 100)}%</span>
+                      <span>🎨 Kleur: {Math.round((smartEnhanceResult.params.saturation - 1) * 100 + 100)}%</span>
+                      <span>🔍 Scherpte: {smartEnhanceResult.params.sharpness.toFixed(1)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="glass-card p-8 flex items-center justify-center">
+                    <div className="text-center">
+                      <Wand2 className="w-10 h-10 text-purple-400/20 mx-auto mb-3" />
+                      <p className="text-white/25 text-sm">Upload een foto en klik op verbeteren</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Remove background result */}
+                {removeBgResult && (
+                  <div className="glass-card p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-green-300 flex items-center gap-2">
+                        <ImageIcon className="w-3.5 h-3.5" /> Achtergrond Verwijderd
+                      </h4>
+                      <button
+                        onClick={() => downloadResult(removeBgResult.image, removeBgResult.format, 'geen-achtergrond')}
+                        className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                      >
+                        <Copy className="w-3 h-3" /> Downloaden
+                      </button>
+                    </div>
+                    <div
+                      className="rounded-xl overflow-hidden max-h-64 flex items-center justify-center"
+                      style={{
+                        background: removeBgResult.format === 'png'
+                          ? 'repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 20px 20px'
+                          : bgColor,
+                      }}
+                    >
+                      <img
+                        src={`data:image/${removeBgResult.format};base64,${removeBgResult.image}`}
+                        alt="Achtergrond verwijderd"
+                        className="max-w-full max-h-64 object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
