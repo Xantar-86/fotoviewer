@@ -25,6 +25,10 @@
     "react-dropzone": "^14.3.5",
     "react-hot-toast": "^2.4.1",
     "axios": "^1.7.9",
-    "clsx": "^2.1.1"
+    "clsx": "^2.1.1",
+    "sharp": "^0.33.5",
+    "@supabase/supabase-js": "^2.47.0",
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@types/sharp": "^0.31.1"
   }
 }
