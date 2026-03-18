@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     // sharp strips all metadata by default (no .withMetadata() call)
     const result = await sharp(buffer).rotate().jpeg({ quality: 92 }).toBuffer()
 
-    return new NextResponse(result, {
+    return new NextResponse(new Uint8Array(result), {
       headers: {
         'Content-Type': 'image/jpeg',
         'Content-Disposition': `attachment; filename="cleaned_${file.name}"`,
