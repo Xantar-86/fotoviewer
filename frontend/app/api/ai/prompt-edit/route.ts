@@ -2,21 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import sharp from 'sharp'
 
-async function pollStabilityResult(id: string, apiKey: string): Promise<Buffer> {
+async function pollStabilityResult(id: string, apiKey: string): Promise<string> {
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 3000))
     const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
     })
     if (res.status === 202) continue
-    if (res.ok) return Buffer.from(await res.arrayBuffer())
+    if (res.ok) {
+      const json = await res.json()
+      if (json.image) return json.image as string
+      throw new Error('Geen afbeelding in Stability AI respons')
+    }
     let errMsg = `Stability AI fout (${res.status})`
     try {
-      const ct = res.headers.get('content-type') || ''
-      if (ct.includes('json')) {
-        const err = await res.json()
-        errMsg = err.message || err.errors?.[0]?.message || errMsg
-      }
+      const err = await res.json()
+      errMsg = err.message || err.errors?.[0]?.message || errMsg
     } catch {}
     throw new Error(errMsg)
   }
@@ -147,32 +148,29 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
           'https://api.stability.ai/v2beta/stable-image/edit/replace-background-and-relight',
           {
             method: 'POST',
-            headers: { Authorization: `Bearer ${stabilityKey}`, Accept: 'image/*' },
+            headers: { Authorization: `Bearer ${stabilityKey}`, Accept: 'application/json' },
             body: stabForm,
           }
         )
         if (!stabRes.ok && stabRes.status !== 202) {
           let errMsg = `Stability AI fout (${stabRes.status})`
           try {
-            const ct = stabRes.headers.get('content-type') || ''
-            if (ct.includes('json')) {
-              const err = await stabRes.json()
-              errMsg = err.message || err.errors?.[0]?.message || errMsg
-            }
+            const err = await stabRes.json()
+            errMsg = err.message || err.errors?.[0]?.message || errMsg
           } catch {}
           return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
         }
 
-        let imageBuffer: Buffer
+        const stabJson = await stabRes.json()
+        let imageBase64: string
         if (stabRes.status === 202) {
-          const json = await stabRes.json()
-          imageBuffer = await pollStabilityResult(json.id, stabilityKey)
+          imageBase64 = await pollStabilityResult(stabJson.id, stabilityKey)
         } else {
-          imageBuffer = Buffer.from(await stabRes.arrayBuffer())
+          imageBase64 = stabJson.image
         }
 
         return NextResponse.json({
-          image: imageBuffer.toString('base64'),
+          image: imageBase64,
           uitleg: params.uitleg || '',
           params,
         })

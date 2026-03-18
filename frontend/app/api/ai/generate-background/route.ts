@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-async function pollStabilityResult(id: string, apiKey: string): Promise<Buffer> {
+async function pollStabilityResult(id: string, apiKey: string): Promise<string> {
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 3000))
     const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
     })
     if (res.status === 202) continue // still processing
-    if (res.ok) return Buffer.from(await res.arrayBuffer())
+    if (res.ok) {
+      const json = await res.json()
+      if (json.image) return json.image as string
+      throw new Error('Geen afbeelding in Stability AI respons')
+    }
     let errMsg = `Stability AI fout (${res.status})`
     try {
-      const ct = res.headers.get('content-type') || ''
-      if (ct.includes('json')) {
-        const err = await res.json()
-        errMsg = err.message || err.errors?.[0]?.message || errMsg
-      }
+      const err = await res.json()
+      errMsg = err.message || err.errors?.[0]?.message || errMsg
     } catch {}
     throw new Error(errMsg)
   }
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          Accept: 'image/*',
+          Accept: 'application/json',
         },
         body: stabForm,
       }
@@ -59,27 +60,25 @@ export async function POST(request: NextRequest) {
     if (!res.ok && res.status !== 202) {
       let errMsg = `Stability AI fout (${res.status})`
       try {
-        const ct = res.headers.get('content-type') || ''
-        if (ct.includes('json')) {
-          const err = await res.json()
-          errMsg = err.message || err.errors?.[0]?.message || errMsg
-        }
+        const err = await res.json()
+        errMsg = err.message || err.errors?.[0]?.message || errMsg
       } catch {}
       const httpStatus = res.status === 401 ? 401 : res.status === 402 ? 402 : 400
       return NextResponse.json({ error: errMsg }, { status: httpStatus })
     }
 
-    let imageBuffer: Buffer
+    const json = await res.json()
+
+    let imageBase64: string
     if (res.status === 202) {
-      // Async generation — poll for result
-      const json = await res.json()
-      imageBuffer = await pollStabilityResult(json.id, apiKey)
+      // Async — poll for result
+      imageBase64 = await pollStabilityResult(json.id, apiKey)
     } else {
-      imageBuffer = Buffer.from(await res.arrayBuffer())
+      imageBase64 = json.image
     }
 
     return NextResponse.json({
-      image: imageBuffer.toString('base64'),
+      image: imageBase64,
       uitleg: `AI heeft de achtergrond vervangen met: "${prompt}"`,
     })
   } catch (e: any) {
