@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import sharp from 'sharp'
 
+async function pollStabilityResult(id: string, apiKey: string): Promise<Buffer> {
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 3000))
+    const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
+    })
+    if (res.status === 202) continue
+    if (res.ok) return Buffer.from(await res.arrayBuffer())
+    let errMsg = `Stability AI fout (${res.status})`
+    try {
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('json')) {
+        const err = await res.json()
+        errMsg = err.message || err.errors?.[0]?.message || errMsg
+      }
+    } catch {}
+    throw new Error(errMsg)
+  }
+  throw new Error('Stability AI timeout — probeer opnieuw')
+}
+
 function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' {
   const t = (file.type || '').toLowerCase()
   if (t === 'image/png') return 'image/png'
@@ -130,7 +151,7 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
             body: stabForm,
           }
         )
-        if (!stabRes.ok) {
+        if (!stabRes.ok && stabRes.status !== 202) {
           let errMsg = `Stability AI fout (${stabRes.status})`
           try {
             const ct = stabRes.headers.get('content-type') || ''
@@ -142,7 +163,14 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
           return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
         }
 
-        const imageBuffer = Buffer.from(await stabRes.arrayBuffer())
+        let imageBuffer: Buffer
+        if (stabRes.status === 202) {
+          const json = await stabRes.json()
+          imageBuffer = await pollStabilityResult(json.id, stabilityKey)
+        } else {
+          imageBuffer = Buffer.from(await stabRes.arrayBuffer())
+        }
+
         return NextResponse.json({
           image: imageBuffer.toString('base64'),
           uitleg: params.uitleg || '',
@@ -226,3 +254,5 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
     return NextResponse.json({ error: msg }, { status: httpStatus })
   }
 }
+
+export const maxDuration = 120

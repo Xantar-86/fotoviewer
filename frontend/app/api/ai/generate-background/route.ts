@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+async function pollStabilityResult(id: string, apiKey: string): Promise<Buffer> {
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 3000))
+    const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
+    })
+    if (res.status === 202) continue // still processing
+    if (res.ok) return Buffer.from(await res.arrayBuffer())
+    let errMsg = `Stability AI fout (${res.status})`
+    try {
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('json')) {
+        const err = await res.json()
+        errMsg = err.message || err.errors?.[0]?.message || errMsg
+      }
+    } catch {}
+    throw new Error(errMsg)
+  }
+  throw new Error('Stability AI timeout — probeer opnieuw')
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -35,7 +56,7 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    if (!res.ok) {
+    if (!res.ok && res.status !== 202) {
       let errMsg = `Stability AI fout (${res.status})`
       try {
         const ct = res.headers.get('content-type') || ''
@@ -48,7 +69,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: errMsg }, { status: httpStatus })
     }
 
-    const imageBuffer = Buffer.from(await res.arrayBuffer())
+    let imageBuffer: Buffer
+    if (res.status === 202) {
+      // Async generation — poll for result
+      const json = await res.json()
+      imageBuffer = await pollStabilityResult(json.id, apiKey)
+    } else {
+      imageBuffer = Buffer.from(await res.arrayBuffer())
+    }
 
     return NextResponse.json({
       image: imageBuffer.toString('base64'),
@@ -59,3 +87,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+export const maxDuration = 120
