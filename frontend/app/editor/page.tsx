@@ -274,33 +274,36 @@ export default function EditorPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-start justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center">
               <ImageIcon className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-medium text-purple-400 uppercase tracking-widest">Foto Editor</span>
+            <span className="text-xs font-medium text-purple-400 uppercase tracking-widest">Foto Editor</span>
           </div>
-          <h1 className="text-3xl font-black gradient-text">Professionele Editor</h1>
+          <h1 className="text-2xl md:text-3xl font-black gradient-text">Professionele Editor</h1>
         </div>
         {processedUrl && (
-          <div className="flex gap-2">
-            <button onClick={resetProcessed} className="btn-secondary flex items-center gap-2 text-sm">
-              <RotateCcw className="w-4 h-4" /> Terugzetten
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={resetProcessed} className="btn-secondary flex items-center gap-1.5 text-xs md:text-sm px-2.5 md:px-4">
+              <RotateCcw className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Terugzetten</span>
             </button>
-            <button onClick={downloadImage} className="btn-primary flex items-center gap-2 text-sm">
-              <Download className="w-4 h-4" /> Downloaden
+            <button onClick={downloadImage} className="btn-primary flex items-center gap-1.5 text-xs md:text-sm px-2.5 md:px-4">
+              <Download className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Downloaden</span>
             </button>
           </div>
         )}
       </div>
 
-      <div className="flex gap-6">
-        {/* Left: tools panel */}
-        <div className="w-72 flex-shrink-0 flex flex-col gap-4">
+      {/* On mobile: image on top, tools below. On desktop: tools left, image right */}
+      <div className="flex flex-col-reverse md:flex-row gap-4 md:gap-6">
+        {/* Tools panel */}
+        <div className="w-full md:w-72 md:flex-shrink-0 flex flex-col gap-4">
           {/* Tool selector */}
-          <div className="glass-card p-2 grid grid-cols-3 gap-1.5">
+          <div className="glass-card p-2 grid grid-cols-6 md:grid-cols-3 gap-1.5">
             {tools.map((t) => {
               const Icon = t.icon
               return (
@@ -503,8 +506,8 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Right: image preview */}
-        <div className="flex-1">
+        {/* Image preview */}
+        <div className="flex-1 min-w-0">
           {!file ? (
             <div
               {...getRootProps()}
@@ -564,11 +567,11 @@ export default function EditorPage() {
 
               {/* Image display */}
               <div className="relative p-4">
-                <div className="relative rounded-xl overflow-hidden bg-black/20" style={{ minHeight: '400px' }}>
+                <div className="relative rounded-xl overflow-hidden bg-black/20" style={{ minHeight: '200px' }}>
                   <img
                     src={showOriginal ? originalUrl! : (processedUrl || originalUrl!)}
                     alt="Preview"
-                    className="w-full h-auto max-h-[600px] object-contain"
+                    className="w-full h-auto max-h-[50vh] md:max-h-[600px] object-contain"
                   />
                   {showOriginal && (
                     <div className="absolute top-3 left-3 badge-yellow text-xs">Origineel</div>

@@ -241,7 +241,7 @@ export default function BusinessPage() {
       </div>
 
       {/* Stats summary */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="glass-card p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 bg-purple-500/20 rounded-xl flex items-center justify-center">
@@ -279,14 +279,14 @@ export default function BusinessPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-r from-purple-600/40 to-violet-600/30 text-purple-300 border border-purple-500/30'
                   : 'glass-button text-white/50 hover:text-white/80'
@@ -321,9 +321,9 @@ export default function BusinessPage() {
                   </div>
                   <button
                     onClick={() => setShowAddIncome(true)}
-                    className="btn-primary text-sm flex items-center gap-2"
+                    className="btn-primary text-sm flex items-center gap-2 whitespace-nowrap"
                   >
-                    <Plus className="w-4 h-4" /> Inkomen toevoegen
+                    <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Inkomen </span>Toevoegen
                   </button>
                 </div>
 
@@ -334,6 +334,7 @@ export default function BusinessPage() {
                       <p className="text-white/30 text-sm">Nog geen inkomen bijgehouden</p>
                     </div>
                   ) : (
+                    <div className="table-scroll">
                     <table className="data-table">
                       <thead>
                         <tr>
@@ -365,6 +366,7 @@ export default function BusinessPage() {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   )}
                 </div>
               </div>
@@ -521,9 +523,9 @@ export default function BusinessPage() {
               </div>
               <button
                 onClick={() => setShowAddOrder(true)}
-                className="btn-primary text-sm flex items-center gap-2"
+                className="btn-primary text-sm flex items-center gap-2 whitespace-nowrap"
               >
-                <Plus className="w-4 h-4" /> Bestelling toevoegen
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Bestelling </span>Toevoegen
               </button>
             </div>
 
@@ -534,6 +536,7 @@ export default function BusinessPage() {
                   <p className="text-white/30 text-sm">Nog geen bestellingen</p>
                 </div>
               ) : (
+                <div className="table-scroll">
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -580,6 +583,7 @@ export default function BusinessPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
 

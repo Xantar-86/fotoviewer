@@ -292,3 +292,15 @@ input[type="range"]::-moz-range-thumb {
 .transition-all-normal {
   transition: all 0.3s ease;
 }
+
+/* Mobile safe area + table utilities */
+@layer utilities {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

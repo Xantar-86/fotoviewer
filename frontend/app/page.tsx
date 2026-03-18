@@ -262,6 +262,7 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
+            <div className="table-scroll">
             <table className="data-table">
               <thead>
                 <tr>
@@ -293,6 +294,7 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </motion.div>

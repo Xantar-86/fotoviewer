@@ -8,11 +8,7 @@ export const metadata: Metadata = {
   description: 'Professionele foto-editor en business tool voor content creators',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="nl" className="dark">
       <body className="min-h-screen bg-[#09090f] text-white overflow-x-hidden">
@@ -26,9 +22,10 @@ export default function RootLayout({
 
         <Sidebar />
 
-        {/* Main content */}
-        <main className="relative z-10 ml-64 min-h-screen">
-          <div className="p-8">
+        {/* Main content: no left margin on mobile, ml-64 on desktop */}
+        <main className="relative z-10 md:ml-64 min-h-screen">
+          {/* Extra bottom padding on mobile for the bottom nav bar */}
+          <div className="p-4 md:p-8 pb-24 md:pb-8">
             {children}
           </div>
         </main>
@@ -44,18 +41,8 @@ export default function RootLayout({
               borderRadius: '12px',
               fontSize: '14px',
             },
-            success: {
-              iconTheme: {
-                primary: '#a855f7',
-                secondary: '#09090f',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#09090f',
-              },
-            },
+            success: { iconTheme: { primary: '#a855f7', secondary: '#09090f' } },
+            error:   { iconTheme: { primary: '#ef4444', secondary: '#09090f' } },
           }}
         />
       </body>
