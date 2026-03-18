@@ -6,17 +6,16 @@ async function pollStabilityResult(id: string, apiKey: string): Promise<string> 
     const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
       headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
     })
-    if (res.status === 202) continue // still processing
+    console.log(`Poll ${i + 1} status:`, res.status)
+    if (res.status === 202) continue
     if (res.ok) {
       const json = await res.json()
+      console.log('Poll result keys:', Object.keys(json))
       if (json.image) return json.image as string
-      throw new Error('Geen afbeelding in Stability AI respons')
+      throw new Error('Geen afbeelding in Stability AI poll respons: ' + JSON.stringify(json).slice(0, 200))
     }
-    let errMsg = `Stability AI fout (${res.status})`
-    try {
-      const err = await res.json()
-      errMsg = err.message || err.errors?.[0]?.message || errMsg
-    } catch {}
+    let errMsg = `Stability AI poll fout (${res.status})`
+    try { const err = await res.json(); errMsg = err.message || err.errors?.[0]?.message || errMsg } catch {}
     throw new Error(errMsg)
   }
   throw new Error('Stability AI timeout — probeer opnieuw')
@@ -49,32 +48,30 @@ export async function POST(request: NextRequest) {
       'https://api.stability.ai/v2beta/stable-image/edit/replace-background-and-relight',
       {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          Accept: 'application/json',
-        },
+        headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
         body: stabForm,
       }
     )
 
+    console.log('Stability initial status:', res.status)
+    const json = await res.json()
+    console.log('Stability initial keys:', Object.keys(json))
+    console.log('Stability initial snippet:', JSON.stringify(json).slice(0, 300))
+
     if (!res.ok && res.status !== 202) {
-      let errMsg = `Stability AI fout (${res.status})`
-      try {
-        const err = await res.json()
-        errMsg = err.message || err.errors?.[0]?.message || errMsg
-      } catch {}
-      const httpStatus = res.status === 401 ? 401 : res.status === 402 ? 402 : 400
-      return NextResponse.json({ error: errMsg }, { status: httpStatus })
+      const errMsg = json.message || json.errors?.[0]?.message || `Stability AI fout (${res.status})`
+      return NextResponse.json({ error: errMsg }, { status: res.status === 401 ? 401 : res.status === 402 ? 402 : 400 })
     }
 
-    const json = await res.json()
-
     let imageBase64: string
-    if (res.status === 202) {
-      // Async — poll for result
+
+    // Handle both: 202 + id, OR 200 + id (some endpoints), OR 200 + image directly
+    if (json.id) {
       imageBase64 = await pollStabilityResult(json.id, apiKey)
-    } else {
+    } else if (json.image) {
       imageBase64 = json.image
+    } else {
+      throw new Error('Onverwachte Stability AI respons: ' + JSON.stringify(json).slice(0, 200))
     }
 
     return NextResponse.json({
@@ -83,6 +80,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (e: any) {
     const msg = e?.message || 'Onbekende fout'
+    console.error('generate-background error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

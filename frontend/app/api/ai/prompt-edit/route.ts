@@ -152,21 +152,24 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
             body: stabForm,
           }
         )
+
+        console.log('Stability initial status:', stabRes.status)
+        const stabJson = await stabRes.json()
+        console.log('Stability initial keys:', Object.keys(stabJson))
+        console.log('Stability initial snippet:', JSON.stringify(stabJson).slice(0, 300))
+
         if (!stabRes.ok && stabRes.status !== 202) {
-          let errMsg = `Stability AI fout (${stabRes.status})`
-          try {
-            const err = await stabRes.json()
-            errMsg = err.message || err.errors?.[0]?.message || errMsg
-          } catch {}
+          const errMsg = stabJson.message || stabJson.errors?.[0]?.message || `Stability AI fout (${stabRes.status})`
           return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
         }
 
-        const stabJson = await stabRes.json()
         let imageBase64: string
-        if (stabRes.status === 202) {
+        if (stabJson.id) {
           imageBase64 = await pollStabilityResult(stabJson.id, stabilityKey)
-        } else {
+        } else if (stabJson.image) {
           imageBase64 = stabJson.image
+        } else {
+          throw new Error('Onverwachte Stability AI respons: ' + JSON.stringify(stabJson).slice(0, 200))
         }
 
         return NextResponse.json({
