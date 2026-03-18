@@ -162,6 +162,30 @@ export async function generateReplyTemplates(
   return res.data
 }
 
+export async function faceBlur(
+  file: File,
+  apiKey: string
+): Promise<{ image: string | null; facesDetected: number; message: string }> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('api_key', apiKey)
+  const res = await api.post('/api/ai/face-blur', form)
+  return res.data
+}
+
+export async function promptEdit(
+  file: File,
+  apiKey: string,
+  prompt: string
+): Promise<{ image: string; uitleg: string; params: Record<string, unknown> }> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('api_key', apiKey)
+  form.append('prompt', prompt)
+  const res = await api.post('/api/ai/prompt-edit', form)
+  return res.data
+}
+
 export async function smartEnhancePhoto(
   file: File,
   apiKey: string

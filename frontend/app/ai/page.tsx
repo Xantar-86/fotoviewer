@@ -15,10 +15,13 @@ import {
   Copy,
   CheckCircle,
   Key,
-  ChevronDown,
   RefreshCw,
+  // ChevronDown unused
   Wand2,
   Image as ImageIcon,
+  ScanFace,
+  PenLine,
+  Download,
 } from 'lucide-react'
 import {
   analyzePhoto,
@@ -27,6 +30,8 @@ import {
   generateReplyTemplates,
   smartEnhancePhoto,
   removeBackground,
+  faceBlur,
+  promptEdit,
 } from '@/lib/api'
 
 type Tab = 'analyze' | 'titles' | 'ideas' | 'replies' | 'edit'
@@ -88,9 +93,12 @@ export default function AIPage() {
   const [removeBgKey, setRemoveBgKey] = useState('')
   const [smartEnhanceResult, setSmartEnhanceResult] = useState<{ image: string; uitleg: string; params: any } | null>(null)
   const [removeBgResult, setRemoveBgResult] = useState<{ image: string; format: string } | null>(null)
+  const [faceBlurResult, setFaceBlurResult] = useState<{ image: string | null; facesDetected: number; message: string } | null>(null)
+  const [promptEditResult, setPromptEditResult] = useState<{ image: string; uitleg: string } | null>(null)
+  const [editPromptText, setEditPromptText] = useState('')
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgTransparent, setBgTransparent] = useState(false)
-  const [editLoading, setEditLoading] = useState<'enhance' | 'removebg' | null>(null)
+  const [editLoading, setEditLoading] = useState<'enhance' | 'removebg' | 'faceblur' | 'prompt' | null>(null)
 
   // Load stored API key
   useEffect(() => {
@@ -216,6 +224,47 @@ export default function AIPage() {
       toast.success('Achtergrond verwijderd!')
     } catch (e: any) {
       toast.error(e.response?.data?.error || e.message || 'Verwijderen mislukt')
+    } finally {
+      setEditLoading(null)
+    }
+  }
+
+  const handleFaceBlur = async () => {
+    if (!file || !apiKey) {
+      toast.error(!file ? 'Selecteer eerst een foto' : 'Vul je Anthropic API sleutel in')
+      return
+    }
+    setEditLoading('faceblur')
+    setFaceBlurResult(null)
+    try {
+      const result = await faceBlur(file, apiKey)
+      setFaceBlurResult(result)
+      if (result.facesDetected === 0) toast('Geen gezichten gevonden in de foto', { icon: '🔍' })
+      else toast.success(`${result.facesDetected} gezicht${result.facesDetected > 1 ? 'en' : ''} geblurd!`)
+    } catch (e: any) {
+      toast.error(e.response?.data?.error || e.message || 'Gezichtsdetectie mislukt')
+    } finally {
+      setEditLoading(null)
+    }
+  }
+
+  const handlePromptEdit = async () => {
+    if (!file || !apiKey) {
+      toast.error(!file ? 'Selecteer eerst een foto' : 'Vul je Anthropic API sleutel in')
+      return
+    }
+    if (!editPromptText.trim()) {
+      toast.error('Typ eerst een bewerkingsopdracht')
+      return
+    }
+    setEditLoading('prompt')
+    setPromptEditResult(null)
+    try {
+      const result = await promptEdit(file, apiKey, editPromptText)
+      setPromptEditResult(result)
+      toast.success('Foto bewerkt via AI!')
+    } catch (e: any) {
+      toast.error(e.response?.data?.error || e.message || 'Bewerking mislukt')
     } finally {
       setEditLoading(null)
     }
@@ -704,6 +753,63 @@ export default function AIPage() {
                   </button>
                 </div>
 
+                {/* Face Blur */}
+                <div className="glass-card p-5 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ScanFace className="w-4 h-4 text-orange-400" />
+                    <h3 className="font-semibold text-white text-sm">Gezichten Blurren</h3>
+                    <span className="badge text-[10px] bg-orange-500/20 text-orange-300 border border-orange-500/30">Claude AI</span>
+                  </div>
+                  <p className="text-xs text-white/40 mb-4">Claude detecteert automatisch alle gezichten en blurt ze voor privacy.</p>
+                  <button
+                    onClick={handleFaceBlur}
+                    disabled={!file || !apiKey || editLoading !== null}
+                    className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+                    style={{ background: 'linear-gradient(135deg, #ea580c, #c2410c)' }}
+                  >
+                    {editLoading === 'faceblur' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScanFace className="w-4 h-4" />}
+                    {editLoading === 'faceblur' ? 'Gezichten detecteren...' : 'Gezichten Automatisch Blurren'}
+                  </button>
+                </div>
+
+                {/* Prompt Edit */}
+                <div className="glass-card p-5 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <PenLine className="w-4 h-4 text-pink-400" />
+                    <h3 className="font-semibold text-white text-sm">Bewerken via Prompt</h3>
+                    <span className="badge text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/30">Claude AI</span>
+                  </div>
+                  <p className="text-xs text-white/40 mb-3">Typ een opdracht en Claude past de foto aan. Bijv: &ldquo;maak warmer en levendiger&rdquo;, &ldquo;vintage stijl&rdquo;, &ldquo;zwart-wit&rdquo;</p>
+                  <textarea
+                    value={editPromptText}
+                    onChange={(e) => setEditPromptText(e.target.value)}
+                    placeholder="Bijv: maak de foto warmer en levendiger, voeg een vintage filter toe, maak dramatischer..."
+                    rows={3}
+                    className="input-dark w-full text-sm resize-none mb-3"
+                    onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) handlePromptEdit() }}
+                  />
+                  <div className="flex gap-2 flex-wrap mb-3">
+                    {['Warmer', 'Vintage', 'Levendig', 'Zwart-wit', 'Dramatisch', 'Zachter', 'Scherper', 'Donkerder'].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setEditPromptText(s.toLowerCase())}
+                        className="text-xs px-2.5 py-1 rounded-lg glass-button text-white/50 hover:text-white/80 transition-all"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handlePromptEdit}
+                    disabled={!file || !apiKey || !editPromptText.trim() || editLoading !== null}
+                    className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+                    style={{ background: 'linear-gradient(135deg, #db2777, #9333ea)' }}
+                  >
+                    {editLoading === 'prompt' ? <Loader2 className="w-4 h-4 animate-spin" /> : <PenLine className="w-4 h-4" />}
+                    {editLoading === 'prompt' ? 'AI bewerkt foto...' : 'Foto Bewerken via AI'}
+                  </button>
+                </div>
+
                 {/* Remove Background */}
                 <div className="glass-card p-5 mt-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -803,6 +909,68 @@ export default function AIPage() {
                       <Wand2 className="w-10 h-10 text-purple-400/20 mx-auto mb-3" />
                       <p className="text-white/25 text-sm">Upload een foto en klik op verbeteren</p>
                     </div>
+                  </div>
+                )}
+
+                {/* Face blur result */}
+                {faceBlurResult && (
+                  <div className="glass-card p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-orange-300 flex items-center gap-2">
+                        <ScanFace className="w-3.5 h-3.5" /> Gezichten Geblurd
+                      </h4>
+                      {faceBlurResult.image && (
+                        <button
+                          onClick={() => downloadResult(faceBlurResult.image!, 'jpeg', 'geblurd')}
+                          className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                        >
+                          <Download className="w-3 h-3" /> Downloaden
+                        </button>
+                      )}
+                    </div>
+                    {faceBlurResult.image ? (
+                      <>
+                        <img
+                          src={`data:image/jpeg;base64,${faceBlurResult.image}`}
+                          alt="Geblurd"
+                          className="w-full rounded-xl object-contain max-h-64 mb-3"
+                        />
+                        <div className="bg-orange-500/10 border border-orange-500/15 rounded-xl p-3">
+                          <p className="text-xs text-orange-300">🎭 {faceBlurResult.message}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bg-white/[0.03] rounded-xl p-4 text-center">
+                        <p className="text-sm text-white/40">{faceBlurResult.message}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Prompt edit result */}
+                {promptEditResult && (
+                  <div className="glass-card p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-pink-300 flex items-center gap-2">
+                        <PenLine className="w-3.5 h-3.5" /> Prompt Resultaat
+                      </h4>
+                      <button
+                        onClick={() => downloadResult(promptEditResult.image, 'jpeg', 'prompt-edit')}
+                        className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                      >
+                        <Download className="w-3 h-3" /> Downloaden
+                      </button>
+                    </div>
+                    <img
+                      src={`data:image/jpeg;base64,${promptEditResult.image}`}
+                      alt="Prompt edit"
+                      className="w-full rounded-xl object-contain max-h-64 mb-3"
+                    />
+                    {promptEditResult.uitleg && (
+                      <div className="bg-pink-500/10 border border-pink-500/15 rounded-xl p-3">
+                        <p className="text-xs text-pink-300 leading-relaxed">✏️ {promptEditResult.uitleg}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
