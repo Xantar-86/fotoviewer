@@ -15,7 +15,8 @@ import {
   Loader2,
   Wand2,
 } from 'lucide-react'
-import { generateCaption, analyzePhoto, CaptionResult } from '@/lib/api'
+import { generateCaption, CaptionResult } from '@/lib/api'
+import axios from 'axios'
 
 const PLATFORMS = ['FeetFinder', 'OnlyFans', 'Fansly', 'Instagram', 'Patreon'] as const
 type Platform = (typeof PLATFORMS)[number]
@@ -45,6 +46,7 @@ export default function CaptionPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
+  const [suggestedHashtags, setSuggestedHashtags] = useState<string[]>([])
   const [captions, setCaptions] = useState<CaptionResult[]>([])
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -59,23 +61,30 @@ export default function CaptionPage() {
     setFile(f)
     const url = URL.createObjectURL(f)
     setPreview(url)
+    setSuggestedHashtags([])
 
-    // Auto-analyze with AI if API key is available
     const key = localStorage.getItem('anthropic_api_key')
     if (!key) return
     setAnalyzing(true)
     try {
-      const result = await analyzePhoto(f, key)
-      if (result.beschrijving) {
-        setTheme(result.beschrijving)
-        toast.success('Foto beschreven door AI!')
+      const form = new FormData()
+      form.append('file', f)
+      form.append('api_key', key)
+      form.append('platform', platform)
+      const res = await axios.post('/api/ai/caption-analyze', form)
+      if (res.data.beschrijving) {
+        setTheme(res.data.beschrijving)
+        toast.success('Foto geanalyseerd voor ' + platform + '!')
+      }
+      if (res.data.hashtags?.length) {
+        setSuggestedHashtags(res.data.hashtags)
       }
     } catch {
-      // Silent fail — user can type manually
+      // Silent fail
     } finally {
       setAnalyzing(false)
     }
-  }, [])
+  }, [platform])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -88,6 +97,7 @@ export default function CaptionPage() {
     if (preview) URL.revokeObjectURL(preview)
     setFile(null)
     setPreview(null)
+    setSuggestedHashtags([])
   }
 
   async function handleGenerate() {
@@ -280,6 +290,35 @@ export default function CaptionPage() {
                 </div>
               )}
             </div>
+
+            {/* Hashtag suggesties */}
+            <AnimatePresence>
+              {suggestedHashtags.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <label className="block text-sm font-medium text-white/70 mb-2 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                    Hashtag suggesties
+                    <span className="text-white/30 font-normal text-xs">— klik om toe te voegen aan beschrijving</span>
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestedHashtags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setTheme(prev => prev ? `${prev} #${tag}` : `#${tag}`)}
+                        className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300/70 border border-purple-500/20 hover:bg-purple-500/25 hover:text-purple-200 transition-all"
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Generate button */}
             <div className="pt-1">
