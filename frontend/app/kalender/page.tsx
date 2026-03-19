@@ -256,7 +256,7 @@ export default function KalenderPage() {
             className="input-dark w-full"
           >
             {PLATFORMS.map(p => (
-              <option key={p} value={p}>{p}</option>
+              <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>
             ))}
           </select>
         </div>
@@ -289,7 +289,7 @@ export default function KalenderPage() {
               className="input-dark w-full"
             >
               {STATUSES.map(s => (
-                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                <option key={s} value={s} className="bg-[#1a1a2e]">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
             </select>
           </div>

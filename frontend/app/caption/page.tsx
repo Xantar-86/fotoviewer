@@ -13,8 +13,9 @@ import {
   Upload,
   X,
   Loader2,
+  Wand2,
 } from 'lucide-react'
-import { generateCaption, CaptionResult } from '@/lib/api'
+import { generateCaption, analyzePhoto, CaptionResult } from '@/lib/api'
 
 const PLATFORMS = ['FeetFinder', 'OnlyFans', 'Fansly', 'Instagram', 'Patreon'] as const
 type Platform = (typeof PLATFORMS)[number]
@@ -43,6 +44,7 @@ export default function CaptionPage() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
   const [captions, setCaptions] = useState<CaptionResult[]>([])
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -51,12 +53,28 @@ export default function CaptionPage() {
     if (stored) setApiKey(stored)
   }, [])
 
-  const onDrop = useCallback((accepted: File[]) => {
+  const onDrop = useCallback(async (accepted: File[]) => {
     const f = accepted[0]
     if (!f) return
     setFile(f)
     const url = URL.createObjectURL(f)
     setPreview(url)
+
+    // Auto-analyze with AI if API key is available
+    const key = localStorage.getItem('anthropic_api_key')
+    if (!key) return
+    setAnalyzing(true)
+    try {
+      const result = await analyzePhoto(f, key)
+      if (result.beschrijving) {
+        setTheme(result.beschrijving)
+        toast.success('Foto beschreven door AI!')
+      }
+    } catch {
+      // Silent fail — user can type manually
+    } finally {
+      setAnalyzing(false)
+    }
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -191,15 +209,26 @@ export default function CaptionPage() {
 
             {/* Theme textarea */}
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">
+              <label className="block text-sm font-medium text-white/70 mb-2 flex items-center gap-2">
                 Content beschrijving <span className="text-purple-400">*</span>
+                {analyzing && (
+                  <span className="flex items-center gap-1 text-xs text-purple-400 font-normal">
+                    <Loader2 className="w-3 h-3 animate-spin" /> AI analyseert foto...
+                  </span>
+                )}
+                {!analyzing && theme && file && (
+                  <span className="flex items-center gap-1 text-xs text-green-400 font-normal">
+                    <Wand2 className="w-3 h-3" /> Automatisch ingevuld
+                  </span>
+                )}
               </label>
               <textarea
                 value={theme}
                 onChange={e => setTheme(e.target.value)}
-                placeholder="Beschrijf je foto of content..."
-                rows={2}
-                className="input-dark w-full rounded-xl px-3 py-2.5 text-sm resize-none"
+                placeholder={analyzing ? 'AI beschrijft je foto...' : 'Beschrijf je foto of content...'}
+                rows={3}
+                disabled={analyzing}
+                className="input-dark w-full rounded-xl px-3 py-2.5 text-sm resize-none disabled:opacity-60"
               />
             </div>
 
@@ -216,6 +245,11 @@ export default function CaptionPage() {
                     alt="Preview"
                     className="h-24 w-24 object-cover rounded-xl border border-white/10"
                   />
+                  {analyzing && (
+                    <div className="absolute inset-0 rounded-xl bg-black/50 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={removeFile}
