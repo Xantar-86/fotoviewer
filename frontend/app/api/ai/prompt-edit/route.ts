@@ -166,7 +166,7 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
       const genH = Math.round((origH * scale) / 8) * 8
 
       // Generate photorealistic background: HuggingFace (if key) or Pollinations fallback
-      let bgBuffer: Buffer
+      let bgBuffer: Buffer = Buffer.alloc(0)
       if (hfKey) {
         const hfRes = await fetch(
           'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
