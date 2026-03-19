@@ -18,7 +18,9 @@ import {
   Loader2,
   Eye,
   Layers,
+  Columns,
 } from 'lucide-react'
+import BeforeAfterSlider from '@/components/BeforeAfterSlider'
 import {
   enhanceImage,
   addTextWatermark,
@@ -74,6 +76,7 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(false)
   const [platforms, setPlatforms] = useState<string[]>([])
   const [showOriginal, setShowOriginal] = useState(false)
+  const [showComparison, setShowComparison] = useState(false)
 
   const [enhance, setEnhance] = useState<EnhanceSettings>({
     brightness: 1.0,
@@ -554,6 +557,19 @@ export default function EditorPage() {
                       Origineel bekijken
                     </button>
                   )}
+                  {originalUrl && processedUrl && (
+                    <button
+                      onClick={() => setShowComparison((v) => !v)}
+                      className={`text-xs px-3 py-1.5 flex items-center gap-1.5 rounded-lg border transition-all duration-200 ${
+                        showComparison
+                          ? 'bg-purple-600/30 border-purple-500/50 text-purple-300'
+                          : 'btn-secondary border-transparent'
+                      }`}
+                    >
+                      <Columns className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Voor/Na</span>
+                    </button>
+                  )}
                   <button
                     {...getRootProps()}
                     className="btn-secondary text-xs px-3 py-1.5"
@@ -567,27 +583,31 @@ export default function EditorPage() {
 
               {/* Image display */}
               <div className="relative p-4">
-                <div className="relative rounded-xl overflow-hidden bg-black/20" style={{ minHeight: '200px' }}>
-                  <img
-                    src={showOriginal ? originalUrl! : (processedUrl || originalUrl!)}
-                    alt="Preview"
-                    className="w-full h-auto max-h-[50vh] md:max-h-[600px] object-contain"
-                  />
-                  {showOriginal && (
-                    <div className="absolute top-3 left-3 badge-yellow text-xs">Origineel</div>
-                  )}
-                  {processedUrl && !showOriginal && (
-                    <div className="absolute top-3 left-3 badge-green text-xs">Bewerkt</div>
-                  )}
-                  {loading && (
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
-                      <div className="text-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-purple-400 mx-auto mb-2" />
-                        <p className="text-white/70 text-sm">Verwerken...</p>
-                      </div>
+                {showComparison && originalUrl && processedUrl ? (
+                  <BeforeAfterSlider before={originalUrl} after={processedUrl} />
+                ) : (
+                  <div className="relative rounded-xl overflow-hidden bg-black/20" style={{ minHeight: '200px' }}>
+                    <img
+                      src={showOriginal ? originalUrl! : (processedUrl || originalUrl!)}
+                      alt="Preview"
+                      className="w-full h-auto max-h-[50vh] md:max-h-[600px] object-contain"
+                    />
+                    {showOriginal && (
+                      <div className="absolute top-3 left-3 badge-yellow text-xs">Origineel</div>
+                    )}
+                    {processedUrl && !showOriginal && (
+                      <div className="absolute top-3 left-3 badge-green text-xs">Bewerkt</div>
+                    )}
+                  </div>
+                )}
+                {loading && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-purple-400 mx-auto mb-2" />
+                      <p className="text-white/70 text-sm">Verwerken...</p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Action bar */}

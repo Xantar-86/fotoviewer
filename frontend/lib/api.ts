@@ -401,6 +401,61 @@ export async function getVatSummary(jaar?: number): Promise<VatSummary> {
   return res.data
 }
 
+export interface CaptionResult {
+  tekst: string
+  hashtags: string[]
+}
+
+export async function generateCaption(
+  platform: string,
+  theme: string,
+  toon: string,
+  apiKey: string,
+  file?: File
+): Promise<{ captions: CaptionResult[] }> {
+  const form = new FormData()
+  form.append('platform', platform)
+  form.append('theme', theme)
+  form.append('toon', toon)
+  form.append('api_key', apiKey)
+  if (file) form.append('file', file)
+  const res = await api.post('/api/ai/caption', form)
+  return res.data
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+
+export interface CalendarItem {
+  id: number
+  datum: string
+  platform: string
+  titel: string
+  beschrijving?: string
+  status: string
+  kleur: string
+}
+
+export async function getCalendarItems(maand?: number, jaar?: number): Promise<{ items: CalendarItem[] }> {
+  const params: Record<string, string> = {}
+  if (maand !== undefined) params.maand = String(maand)
+  if (jaar !== undefined) params.jaar = String(jaar)
+  const res = await api.get('/api/business/calendar', { params })
+  return res.data
+}
+
+export async function addCalendarItem(data: Omit<CalendarItem, 'id'>): Promise<{ id: number; message: string }> {
+  const res = await api.post('/api/business/calendar', data)
+  return res.data
+}
+
+export async function updateCalendarItem(id: number, data: Partial<CalendarItem>): Promise<void> {
+  await api.put(`/api/business/calendar/${id}`, data)
+}
+
+export async function deleteCalendarItem(id: number): Promise<void> {
+  await api.delete(`/api/business/calendar/${id}`)
+}
+
 export function base64ToObjectUrl(base64: string, mimeType = 'image/jpeg'): string {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)

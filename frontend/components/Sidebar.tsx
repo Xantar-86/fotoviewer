@@ -11,16 +11,27 @@ import {
   Settings,
   Zap,
   ChevronRight,
+  FileText,
+  Columns,
+  CalendarDays,
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const navItems = [
-  { href: '/',         icon: LayoutDashboard, label: 'Dashboard',    description: 'Overzicht' },
-  { href: '/editor',   icon: ImageIcon,       label: 'Foto Editor',  description: 'Bewerken & verwerken' },
-  { href: '/ai',       icon: Sparkles,        label: 'AI Studio',    description: 'Claude AI assistent' },
-  { href: '/business', icon: BarChart3,       label: 'Business',     description: 'Inkomsten & bestellingen' },
-  { href: '/settings', icon: Settings,        label: 'Instellingen', description: 'API sleutels & voorkeur' },
+  { href: '/',             icon: LayoutDashboard, label: 'Dashboard',    description: 'Overzicht' },
+  { href: '/editor',       icon: ImageIcon,       label: 'Foto Editor',  description: 'Bewerken & verwerken' },
+  { href: '/ai',           icon: Sparkles,        label: 'AI Studio',    description: 'Claude AI assistent' },
+  { href: '/caption',      icon: FileText,        label: 'Captions',     description: 'Post captions genereren' },
+  { href: '/vergelijking', icon: Columns,         label: 'Vergelijking', description: 'Voor/na slider' },
+  { href: '/kalender',     icon: CalendarDays,    label: 'Kalender',     description: 'Content planning' },
+  { href: '/business',     icon: BarChart3,       label: 'Business',     description: 'Inkomsten & bestellingen' },
+  { href: '/settings',     icon: Settings,        label: 'Instellingen', description: 'API sleutels & voorkeur' },
 ]
+
+// Mobile nav shows only the 5 most-used items to avoid crowding
+const mobileNavItems = navItems.filter(i =>
+  ['/', '/editor', '/ai', '/business', '/settings'].includes(i.href)
+)
 
 // ─── Desktop sidebar (hidden on mobile) ──────────────────────────────────────
 export default function Sidebar() {
@@ -124,7 +135,7 @@ function MobileNav({ pathname }: { pathname: string }) {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-xl border-t border-white/[0.08]" />
       <div className="relative flex items-center justify-around px-2 py-2 safe-area-pb">
-        {navItems.map((item) => {
+        {mobileNavItems.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
           return (
