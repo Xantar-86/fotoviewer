@@ -106,7 +106,7 @@ export default function AIPage() {
   const [bgColor, setBgColor] = useState('#ffffff')
   const [bgTransparent, setBgTransparent] = useState(false)
   const [editLoading, setEditLoading] = useState<'enhance' | 'removebg' | 'faceblur' | 'prompt' | 'genbg' | null>(null)
-  const [stabilityKey, setStabilityKey] = useState('')
+  const [hfKey, setHfKey] = useState('')
   const [genBgPrompt, setGenBgPrompt] = useState('')
   const [genBgResult, setGenBgResult] = useState<{ image: string; uitleg: string } | null>(null)
 
@@ -116,8 +116,8 @@ export default function AIPage() {
     if (stored) setApiKey(stored.trim())
     const storedRemoveBgKey = localStorage.getItem('remove_bg_api_key') || ''
     if (storedRemoveBgKey) setRemoveBgKey(storedRemoveBgKey)
-    const storedStabilityKey = localStorage.getItem('stability_api_key') || ''
-    if (storedStabilityKey) setStabilityKey(storedStabilityKey)
+    const storedHfKey = localStorage.getItem('hf_api_key') || ''
+    if (storedHfKey) setHfKey(storedHfKey)
   }, [])
 
   const saveApiKey = () => {
@@ -274,7 +274,7 @@ export default function AIPage() {
     setEditLoading('prompt')
     setPromptEditResult(null)
     try {
-      const result = await promptEdit(file, apiKey, editPromptText, removeBgKey, stabilityKey)
+      const result = await promptEdit(file, apiKey, editPromptText, removeBgKey, hfKey)
       setPromptEditResult(result)
       toast.success('Foto bewerkt via AI!')
     } catch (e: any) {
@@ -286,12 +286,12 @@ export default function AIPage() {
 
   const handleGenerateBackground = async () => {
     if (!file) { toast.error('Selecteer eerst een foto'); return }
-    if (!stabilityKey) { toast.error('Vul je Stability AI sleutel in bij Instellingen'); return }
+    if (!removeBgKey) { toast.error('Vul je remove.bg API sleutel in bij Instellingen'); return }
     if (!genBgPrompt.trim()) { toast.error('Typ een achtergrond omschrijving'); return }
     setEditLoading('genbg')
     setGenBgResult(null)
     try {
-      const result = await generateBackground(file, removeBgKey, genBgPrompt, apiKey)
+      const result = await generateBackground(file, removeBgKey, genBgPrompt, apiKey, hfKey)
       setGenBgResult(result)
       toast.success('AI achtergrond gegenereerd!')
     } catch (e: any) {
@@ -920,7 +920,7 @@ export default function AIPage() {
                   <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="w-4 h-4 text-violet-400" />
                     <h3 className="font-semibold text-white text-sm">AI Achtergrond Genereren</h3>
-                    <span className="badge text-[10px] bg-violet-500/20 text-violet-300 border border-violet-500/30">Stability AI</span>
+                    <span className="badge text-[10px] bg-violet-500/20 text-violet-300 border border-violet-500/30">HuggingFace / Gratis</span>
                   </div>
                   <p className="text-xs text-white/40 mb-3">
                     Vervang de achtergrond met een fotorealistische AI-scène via gratis beeldgeneratie. Vereist remove.bg sleutel.

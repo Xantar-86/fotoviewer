@@ -15,19 +15,60 @@ async function translateToEnglish(prompt: string, anthropicKey: string): Promise
   return ((response.content[0] as any).text || prompt).trim().replace(/^"|"$/g, '')
 }
 
+async function generateWithPollinations(prompt: string, w: number, h: number): Promise<Buffer> {
+  // Try with params first, fall back to no params
+  const urls = [
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&seed=${Math.floor(Math.random() * 99999)}`,
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`,
+  ]
+  for (const url of urls) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) {
+        const buf = Buffer.from(await res.arrayBuffer())
+        // Verify it's an image (JPEG or PNG magic bytes)
+        if ((buf[0] === 0xFF && buf[1] === 0xD8) || (buf[0] === 0x89 && buf[1] === 0x50)) {
+          return buf
+        }
+      }
+    } catch {}
+  }
+  throw new Error('Pollinations.ai kon geen afbeelding genereren. Probeer opnieuw of gebruik een kortere beschrijving.')
+}
+
+async function generateWithHuggingFace(prompt: string, hfKey: string): Promise<Buffer> {
+  const res = await fetch(
+    'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${hfKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ inputs: prompt }),
+    }
+  )
+  if (!res.ok) {
+    const err = await res.text().catch(() => '')
+    throw new Error(`HuggingFace fout (${res.status}): ${err.slice(0, 100)}`)
+  }
+  return Buffer.from(await res.arrayBuffer())
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const anthropicKey = ((formData.get('anthropic_key') as string) || '').trim()
     const removeBgKey = ((formData.get('remove_bg_key') as string) || '').trim()
+    const hfKey = ((formData.get('hf_key') as string) || '').trim()
     const promptRaw = (formData.get('prompt') as string || '').trim()
 
     if (!file) return NextResponse.json({ error: 'Geen bestand ontvangen' }, { status: 400 })
     if (!promptRaw) return NextResponse.json({ error: 'Beschrijf de nieuwe achtergrond' }, { status: 400 })
     if (!removeBgKey) return NextResponse.json({ error: 'remove.bg API sleutel vereist. Voeg gratis toe bij Instellingen (50/maand).' }, { status: 400 })
 
-    // Translate prompt to English for image generation
+    // Translate prompt to English
     const englishPrompt = anthropicKey
       ? await translateToEnglish(promptRaw, anthropicKey)
       : promptRaw
@@ -52,23 +93,21 @@ export async function POST(request: NextRequest) {
     const origW = meta.width || 1080
     const origH = meta.height || 1080
 
-    // Cap to 1024px max for Pollinations (multiples of 8)
+    // Cap to 1024px for generation
     const maxDim = 1024
     const scale = Math.min(1, maxDim / Math.max(origW, origH))
     const genW = Math.round((origW * scale) / 8) * 8
     const genH = Math.round((origH * scale) / 8) * 8
 
-    // Step 2: Generate background via Pollinations.ai (free, no API key needed)
-    const seed = Math.floor(Math.random() * 999999)
-    const bgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=${genW}&height=${genH}&seed=${seed}&nologo=true`
-    const bgRes = await fetch(bgUrl)
-    if (!bgRes.ok) {
-      const errText = await bgRes.text().catch(() => '')
-      throw new Error(`Achtergrond genereren mislukt (${bgRes.status})${errText ? ': ' + errText.slice(0, 100) : ''}`)
+    // Step 2: Generate background (HuggingFace if key available, else Pollinations)
+    let bgBuffer: Buffer
+    if (hfKey) {
+      bgBuffer = await generateWithHuggingFace(englishPrompt, hfKey)
+    } else {
+      bgBuffer = await generateWithPollinations(englishPrompt, genW, genH)
     }
-    const bgBuffer = Buffer.from(await bgRes.arrayBuffer())
 
-    // Step 3: Composite subject over generated background (resize bg to original subject size)
+    // Step 3: Composite subject over generated background
     const result = await (sharp(bgBuffer)
       .resize(origW, origH, { fit: 'cover' })
       .composite([{ input: subjectPng, blend: 'over' }])

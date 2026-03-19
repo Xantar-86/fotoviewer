@@ -24,24 +24,24 @@ export default function SettingsPage() {
   const [showKey, setShowKey] = useState(false)
   const [watermarkText, setWatermarkText] = useState('© FeetBusiness')
   const [removeBgKey, setRemoveBgKey] = useState('')
-  const [stabilityKey, setStabilityKey] = useState('')
+  const [hfKey, setHfKey] = useState('')
 
   useEffect(() => {
     const storedKey = localStorage.getItem('anthropic_api_key') || ''
     const storedWatermark = localStorage.getItem('default_watermark') || '© FeetBusiness'
     const storedRemoveBgKey = localStorage.getItem('remove_bg_api_key') || ''
-    const storedStabilityKey = localStorage.getItem('stability_api_key') || ''
+    const storedHfKey = localStorage.getItem('hf_api_key') || ''
     setApiKey(storedKey)
     setWatermarkText(storedWatermark)
     setRemoveBgKey(storedRemoveBgKey)
-    setStabilityKey(storedStabilityKey)
+    setHfKey(storedHfKey)
   }, [])
 
   const saveSettings = () => {
     localStorage.setItem('anthropic_api_key', apiKey)
     localStorage.setItem('default_watermark', watermarkText)
     localStorage.setItem('remove_bg_api_key', removeBgKey)
-    localStorage.setItem('stability_api_key', stabilityKey)
+    localStorage.setItem('hf_api_key', hfKey)
     toast.success('Instellingen opgeslagen')
   }
 
@@ -51,7 +51,7 @@ export default function SettingsPage() {
     setApiKey('')
     setWatermarkText('© FeetBusiness')
     setRemoveBgKey('')
-    setStabilityKey('')
+    setHfKey('')
     toast.success('Alle lokale gegevens gewist')
   }
 
@@ -186,7 +186,7 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Stability AI API Key */}
+        {/* HuggingFace API Key */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -198,10 +198,10 @@ export default function SettingsPage() {
               <Sparkles className="w-4.5 h-4.5 text-violet-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Stability AI API Sleutel</h3>
-              <p className="text-xs text-white/40">Vereist voor AI achtergrond genereren (generatieve AI)</p>
+              <h3 className="font-semibold text-white">HuggingFace API Sleutel</h3>
+              <p className="text-xs text-white/40">Optioneel — voor hogere kwaliteit AI achtergronden (FLUX.1)</p>
             </div>
-            {stabilityKey && (
+            {hfKey && (
               <span className="ml-auto badge-green text-xs flex items-center gap-1">
                 <CheckCircle className="w-3 h-3" /> Geconfigureerd
               </span>
@@ -212,9 +212,9 @@ export default function SettingsPage() {
             <div className="relative flex-1">
               <input
                 type={showKey ? 'text' : 'password'}
-                value={stabilityKey}
-                onChange={(e) => setStabilityKey(e.target.value)}
-                placeholder="sk-..."
+                value={hfKey}
+                onChange={(e) => setHfKey(e.target.value)}
+                placeholder="hf_..."
                 className="input-dark w-full font-mono text-sm"
               />
             </div>
@@ -222,17 +222,17 @@ export default function SettingsPage() {
 
           <div className="bg-violet-500/8 border border-violet-500/15 rounded-xl p-3">
             <p className="text-xs text-white/40 leading-relaxed">
-              Haal je API sleutel op via{' '}
+              Gratis account via{' '}
               <a
-                href="https://platform.stability.ai/account/keys"
+                href="https://huggingface.co/settings/tokens"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-violet-400 hover:text-violet-300 inline-flex items-center gap-0.5"
               >
-                platform.stability.ai
+                huggingface.co/settings/tokens
                 <ExternalLink className="w-3 h-3" />
               </a>
-              {' '}— Gratis credits voor nieuwe accounts. Gebruikt voor fotorealistisch achtergrond vervangen.
+              {' '}— Gratis inference credits. Zonder sleutel wordt Pollinations.ai (volledig gratis) gebruikt.
             </p>
           </div>
         </motion.div>

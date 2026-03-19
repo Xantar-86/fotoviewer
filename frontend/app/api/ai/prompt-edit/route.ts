@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const apiKey = ((formData.get('api_key') as string) || '').trim()
     const removeBgKey = ((formData.get('remove_bg_key') as string) || '').trim()
-    const stabilityKey = ((formData.get('stability_key') as string) || '').trim()
+    const hfKey = ((formData.get('hf_key') as string) || '').trim()
     const prompt = (formData.get('prompt') as string || '').trim()
 
     if (!apiKey) return NextResponse.json({ error: 'Anthropic API sleutel vereist' }, { status: 400 })
@@ -165,12 +165,44 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
       const genW = Math.round((origW * scale) / 8) * 8
       const genH = Math.round((origH * scale) / 8) * 8
 
-      // Generate photorealistic background via Pollinations.ai (free, no key needed)
-      const seed = Math.floor(Math.random() * 999999)
-      const bgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(bgPrompt)}?width=${genW}&height=${genH}&seed=${seed}&nologo=true`
-      const bgRes = await fetch(bgUrl)
-      if (!bgRes.ok) throw new Error(`Achtergrond genereren mislukt (${bgRes.status})`)
-      const bgBuffer = Buffer.from(await bgRes.arrayBuffer())
+      // Generate photorealistic background: HuggingFace (if key) or Pollinations fallback
+      let bgBuffer: Buffer
+      if (hfKey) {
+        const hfRes = await fetch(
+          'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${hfKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inputs: bgPrompt }),
+          }
+        )
+        if (!hfRes.ok) {
+          const err = await hfRes.text().catch(() => '')
+          throw new Error(`HuggingFace fout (${hfRes.status}): ${err.slice(0, 100)}`)
+        }
+        bgBuffer = Buffer.from(await hfRes.arrayBuffer())
+      } else {
+        const seed = Math.floor(Math.random() * 999999)
+        const urls = [
+          `https://image.pollinations.ai/prompt/${encodeURIComponent(bgPrompt)}?width=${genW}&height=${genH}&seed=${seed}&nologo=true`,
+          `https://image.pollinations.ai/prompt/${encodeURIComponent(bgPrompt)}`,
+        ]
+        let generated = false
+        for (const bgUrl of urls) {
+          try {
+            const bgRes = await fetch(bgUrl)
+            if (bgRes.ok) {
+              const buf = Buffer.from(await bgRes.arrayBuffer())
+              if ((buf[0] === 0xFF && buf[1] === 0xD8) || (buf[0] === 0x89 && buf[1] === 0x50)) {
+                bgBuffer = buf
+                generated = true
+                break
+              }
+            }
+          } catch {}
+        }
+        if (!generated) throw new Error('Achtergrond genereren mislukt. Probeer opnieuw of voeg een HuggingFace sleutel toe bij Instellingen.')
+      }
 
       // Composite subject over generated background (resize bg back to original dimensions)
       const result = await (sharp(bgBuffer)

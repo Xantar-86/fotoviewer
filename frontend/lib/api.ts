@@ -178,14 +178,14 @@ export async function promptEdit(
   apiKey: string,
   prompt: string,
   removeBgKey = '',
-  stabilityKey = ''
+  hfKey = ''
 ): Promise<{ image: string; uitleg: string; params: Record<string, unknown> }> {
   const form = new FormData()
   form.append('file', file)
   form.append('api_key', apiKey)
   form.append('prompt', prompt)
   form.append('remove_bg_key', removeBgKey)
-  form.append('stability_key', stabilityKey)
+  form.append('hf_key', hfKey)
   const res = await api.post('/api/ai/prompt-edit', form)
   return res.data
 }
@@ -218,13 +218,15 @@ export async function generateBackground(
   file: File,
   removeBgKey: string,
   prompt: string,
-  anthropicKey = ''
+  anthropicKey = '',
+  hfKey = ''
 ): Promise<{ image: string; uitleg: string }> {
   const form = new FormData()
   form.append('file', file)
   form.append('remove_bg_key', removeBgKey)
   form.append('prompt', prompt)
   form.append('anthropic_key', anthropicKey)
+  form.append('hf_key', hfKey)
   const res = await api.post('/api/ai/generate-background', form)
   return res.data
 }
