@@ -6,19 +6,15 @@ async function pollStabilityResult(id: string, apiKey: string): Promise<string> 
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 3000))
     const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
     })
     if (res.status === 202) continue
-    if (res.ok) {
-      const json = await res.json()
-      if (json.image) return json.image as string
-      throw new Error('Geen afbeelding in Stability AI respons')
+    if (res.status === 200) {
+      const imageBuffer = Buffer.from(await res.arrayBuffer())
+      return imageBuffer.toString('base64')
     }
-    let errMsg = `Stability AI fout (${res.status})`
-    try {
-      const err = await res.json()
-      errMsg = err.message || err.errors?.[0]?.message || errMsg
-    } catch {}
+    let errMsg = `Stability AI poll fout (${res.status})`
+    try { const t = await res.text(); errMsg = t.slice(0, 200) || errMsg } catch {}
     throw new Error(errMsg)
   }
   throw new Error('Stability AI timeout — probeer opnieuw')
@@ -148,28 +144,28 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
           'https://api.stability.ai/v2beta/stable-image/edit/replace-background-and-relight',
           {
             method: 'POST',
-            headers: { Authorization: `Bearer ${stabilityKey}`, Accept: 'application/json' },
+            headers: { Authorization: `Bearer ${stabilityKey}`, Accept: 'image/*' },
             body: stabForm,
           }
         )
 
-        console.log('Stability initial status:', stabRes.status)
-        const stabJson = await stabRes.json()
-        console.log('Stability initial keys:', Object.keys(stabJson))
-        console.log('Stability initial snippet:', JSON.stringify(stabJson).slice(0, 300))
-
-        if (!stabRes.ok && stabRes.status !== 202) {
-          const errMsg = stabJson.message || stabJson.errors?.[0]?.message || `Stability AI fout (${stabRes.status})`
-          return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
-        }
-
         let imageBase64: string
-        if (stabJson.id) {
+        if (stabRes.status === 200) {
+          const imageBuffer = Buffer.from(await stabRes.arrayBuffer())
+          imageBase64 = imageBuffer.toString('base64')
+        } else if (stabRes.status === 202) {
+          const stabJson = await stabRes.json()
           imageBase64 = await pollStabilityResult(stabJson.id, stabilityKey)
-        } else if (stabJson.image) {
-          imageBase64 = stabJson.image
         } else {
-          throw new Error('Onverwachte Stability AI respons: ' + JSON.stringify(stabJson).slice(0, 200))
+          let errMsg = `Stability AI fout (${stabRes.status})`
+          try {
+            const ct = stabRes.headers.get('content-type') || ''
+            if (ct.includes('json')) {
+              const err = await stabRes.json()
+              errMsg = err.message || err.errors?.[0]?.message || errMsg
+            }
+          } catch {}
+          return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
         }
 
         return NextResponse.json({

@@ -4,18 +4,15 @@ async function pollStabilityResult(id: string, apiKey: string): Promise<string> 
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 3000))
     const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
     })
-    console.log(`Poll ${i + 1} status:`, res.status)
-    if (res.status === 202) continue
-    if (res.ok) {
-      const json = await res.json()
-      console.log('Poll result keys:', Object.keys(json))
-      if (json.image) return json.image as string
-      throw new Error('Geen afbeelding in Stability AI poll respons: ' + JSON.stringify(json).slice(0, 200))
+    if (res.status === 202) continue // still processing
+    if (res.status === 200) {
+      const imageBuffer = Buffer.from(await res.arrayBuffer())
+      return imageBuffer.toString('base64')
     }
     let errMsg = `Stability AI poll fout (${res.status})`
-    try { const err = await res.json(); errMsg = err.message || err.errors?.[0]?.message || errMsg } catch {}
+    try { const t = await res.text(); errMsg = t.slice(0, 200) || errMsg } catch {}
     throw new Error(errMsg)
   }
   throw new Error('Stability AI timeout — probeer opnieuw')
@@ -48,39 +45,46 @@ export async function POST(request: NextRequest) {
       'https://api.stability.ai/v2beta/stable-image/edit/replace-background-and-relight',
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+        headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
         body: stabForm,
       }
     )
 
-    console.log('Stability initial status:', res.status)
-    const json = await res.json()
-    console.log('Stability initial keys:', Object.keys(json))
-    console.log('Stability initial snippet:', JSON.stringify(json).slice(0, 300))
-
-    if (!res.ok && res.status !== 202) {
-      const errMsg = json.message || json.errors?.[0]?.message || `Stability AI fout (${res.status})`
-      return NextResponse.json({ error: errMsg }, { status: res.status === 401 ? 401 : res.status === 402 ? 402 : 400 })
+    // 200 = synchronous result (binary image)
+    // 202 = async generation started (JSON with id)
+    if (res.status === 200) {
+      const imageBuffer = Buffer.from(await res.arrayBuffer())
+      return NextResponse.json({
+        image: imageBuffer.toString('base64'),
+        uitleg: `AI heeft de achtergrond vervangen met: "${prompt}"`,
+      })
     }
 
-    let imageBase64: string
-
-    // Handle both: 202 + id, OR 200 + id (some endpoints), OR 200 + image directly
-    if (json.id) {
-      imageBase64 = await pollStabilityResult(json.id, apiKey)
-    } else if (json.image) {
-      imageBase64 = json.image
-    } else {
-      throw new Error('Onverwachte Stability AI respons: ' + JSON.stringify(json).slice(0, 200))
+    if (res.status === 202) {
+      const json = await res.json()
+      const imageBase64 = await pollStabilityResult(json.id, apiKey)
+      return NextResponse.json({
+        image: imageBase64,
+        uitleg: `AI heeft de achtergrond vervangen met: "${prompt}"`,
+      })
     }
 
-    return NextResponse.json({
-      image: imageBase64,
-      uitleg: `AI heeft de achtergrond vervangen met: "${prompt}"`,
-    })
+    // Error
+    let errMsg = `Stability AI fout (${res.status})`
+    try {
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('json')) {
+        const err = await res.json()
+        errMsg = err.message || err.errors?.[0]?.message || errMsg
+      } else {
+        const t = await res.text()
+        errMsg = t.slice(0, 200) || errMsg
+      }
+    } catch {}
+    return NextResponse.json({ error: errMsg }, { status: res.status === 401 ? 401 : res.status === 402 ? 402 : 400 })
+
   } catch (e: any) {
     const msg = e?.message || 'Onbekende fout'
-    console.error('generate-background error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
