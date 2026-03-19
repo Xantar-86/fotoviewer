@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Sidebar from '@/components/Sidebar'
 import { Toaster } from 'react-hot-toast'
@@ -6,6 +6,11 @@ import { Toaster } from 'react-hot-toast'
 export const metadata: Metadata = {
   title: 'FeetBusiness Studio',
   description: 'Professionele foto-editor en business tool voor content creators',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
