@@ -45,20 +45,21 @@ export async function POST(request: NextRequest) {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
+      system: 'You are a content creator assistant. Always respond with valid JSON only. No markdown, no explanation, just the JSON object.',
       messages: [{
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
           {
             type: 'text',
-            text: `You are a content creator assistant for ${context}
+            text: `Analyze this photo for ${context}
 
-Analyze this photo and generate in Dutch:
-1. A platform-specific description (2-3 sentences) capturing the mood, style, and key visual elements.
-2. 5-8 specific hashtags based on what you see (colors, pose, location, mood, style details).
+Write in Dutch:
+- "beschrijving": 2-3 sentences describing the mood, style, and visual elements of the photo for this platform
+- "hashtags": array of 5-8 specific tags based on what you see (colors, pose, location, mood, styling)
 
-Return ONLY valid JSON, nothing else:
-{"beschrijving": "...", "hashtags": ["tag1", "tag2", "tag3"]}`,
+JSON format:
+{"beschrijving": "Nederlandse beschrijving hier.", "hashtags": ["tag1", "tag2", "tag3"]}`,
           },
         ],
       }],
@@ -66,24 +67,23 @@ Return ONLY valid JSON, nothing else:
 
     const rawText = (response.content[0] as any).text.trim()
 
-    // Try to extract JSON from the response
-    const match = rawText.match(/\{[\s\S]*?\}(?=\s*$)/) || rawText.match(/\{[\s\S]*\}/)
+    // Strip markdown code fences if present
+    const cleaned = rawText
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```\s*$/, '')
+      .trim()
+
+    // Extract JSON object
+    const match = cleaned.match(/\{[\s\S]*\}/)
     if (!match) {
-      // Return a fallback using just the platform defaults if AI doesn't return JSON
-      return NextResponse.json({
-        beschrijving: '',
-        hashtags: baseHashtags,
-      })
+      return NextResponse.json({ beschrijving: '', hashtags: baseHashtags })
     }
 
     let result: { beschrijving?: string; hashtags?: string[] }
     try {
       result = JSON.parse(match[0])
     } catch {
-      return NextResponse.json({
-        beschrijving: '',
-        hashtags: baseHashtags,
-      })
+      return NextResponse.json({ beschrijving: '', hashtags: baseHashtags })
     }
 
     const allHashtags = [...new Set([...(result.hashtags || []), ...baseHashtags])]
