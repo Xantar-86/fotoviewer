@@ -291,7 +291,7 @@ export default function AIPage() {
     setEditLoading('genbg')
     setGenBgResult(null)
     try {
-      const result = await generateBackground(file, stabilityKey, genBgPrompt)
+      const result = await generateBackground(file, stabilityKey, genBgPrompt, apiKey)
       setGenBgResult(result)
       toast.success('AI achtergrond gegenereerd!')
     } catch (e: any) {
@@ -822,13 +822,25 @@ export default function AIPage() {
                     onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) handlePromptEdit() }}
                   />
                   <div className="flex gap-2 flex-wrap mb-3">
-                    {['Warmer', 'Vintage', 'Levendig', 'Zwart-wit', 'Dramatisch', 'Zachter', 'Strand achtergrond', 'Kerstsfeer achtergrond', 'Studio achtergrond', 'Zonsondergang achtergrond', 'Bos achtergrond'].map((s) => (
+                    {[
+                      { label: 'Warmer', value: 'warmer' },
+                      { label: 'Vintage', value: 'vintage' },
+                      { label: 'Levendig', value: 'levendig' },
+                      { label: 'Zwart-wit', value: 'zwart-wit' },
+                      { label: 'Dramatisch', value: 'dramatisch' },
+                      { label: 'Zachter', value: 'zachter' },
+                      { label: 'Strand', value: 'tropical beach with clear water and white sand' },
+                      { label: 'Kerstsfeer', value: 'magical Christmas scene with snow and warm lights' },
+                      { label: 'Studio', value: 'professional photography studio soft gradient background' },
+                      { label: 'Zonsondergang', value: 'romantic sunset golden hour warm tones' },
+                      { label: 'Bos', value: 'misty forest with soft morning light' },
+                    ].map(({ label, value }) => (
                       <button
-                        key={s}
-                        onClick={() => setEditPromptText(s.toLowerCase())}
+                        key={label}
+                        onClick={() => setEditPromptText(value)}
                         className="text-xs px-2.5 py-1 rounded-lg glass-button text-white/50 hover:text-white/80 transition-all"
                       >
-                        {s}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -930,21 +942,21 @@ export default function AIPage() {
                   />
                   <div className="flex gap-1.5 flex-wrap mb-3">
                     {[
-                      'Tropisch strand met golven',
-                      'Kerstsfeer met sneeuw',
-                      'Professionele fotostudio',
-                      'Romantische zonsondergang',
-                      'Mistig bos',
-                      'Stad bij nacht',
-                      'Bloemenweide',
-                      'Luxe hotel lobby',
-                    ].map((s) => (
+                      { label: 'Tropisch strand', prompt: 'tropical beach with clear turquoise water, white sand, palm trees, golden hour sunlight' },
+                      { label: 'Kerstsfeer', prompt: 'magical Christmas winter scene with snow, pine trees, warm lights, cozy atmosphere' },
+                      { label: 'Professionele studio', prompt: 'professional photography studio with soft gradient background, clean and elegant' },
+                      { label: 'Romantische zonsondergang', prompt: 'romantic sunset with warm golden and orange tones, soft bokeh, dreamy atmosphere' },
+                      { label: 'Mistig bos', prompt: 'misty forest with soft morning light filtering through tall trees, ethereal atmosphere' },
+                      { label: 'Stad bij nacht', prompt: 'city at night with bokeh lights, rain reflections on street, cinematic mood' },
+                      { label: 'Bloemenweide', prompt: 'colorful flower meadow in spring, soft focus, natural light, vibrant colors' },
+                      { label: 'Luxe interieur', prompt: 'luxury hotel lobby with marble floors, golden accents, elegant lighting' },
+                    ].map(({ label, prompt }) => (
                       <button
-                        key={s}
-                        onClick={() => setGenBgPrompt(s)}
+                        key={label}
+                        onClick={() => setGenBgPrompt(prompt)}
                         className="text-xs px-2.5 py-1 rounded-lg glass-button text-white/50 hover:text-violet-300 transition-all"
                       >
-                        {s}
+                        {label}
                       </button>
                     ))}
                   </div>
