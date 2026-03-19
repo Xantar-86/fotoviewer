@@ -57,7 +57,7 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
   const context = PLATFORM_CONTEXT[platform] || PLATFORM_CONTEXT['FeetFinder']
 
   const response = await groq.chat.completions.create({
-    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    model: 'llama-3.2-90b-vision-preview',
     max_tokens: 500,
     messages: [
       {
@@ -147,8 +147,12 @@ export async function POST(request: NextRequest) {
     }
 
     const result = extractJson(rawText)
-    if (!result) {
-      return NextResponse.json({ beschrijving: '', hashtags: baseHashtags })
+    if (!result || !result.beschrijving) {
+      // Return raw text as error so frontend can show it
+      return NextResponse.json(
+        { error: `AI gaf geen geldige beschrijving. Antwoord: ${rawText.slice(0, 200)}` },
+        { status: 500 }
+      )
     }
 
     const allHashtags = [...new Set([...(result.hashtags || []), ...baseHashtags])]
