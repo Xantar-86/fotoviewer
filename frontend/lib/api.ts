@@ -308,6 +308,99 @@ export async function calculatePrice(
   return res.data
 }
 
+// ─── Subscribers ─────────────────────────────────────────────────────────────
+
+export interface SubscriberItem {
+  id: number
+  platform: string
+  aantal: number
+  datum: string
+  notitie?: string
+}
+
+export async function getSubscribers(): Promise<{ items: SubscriberItem[] }> {
+  const res = await api.get('/api/business/subscribers')
+  return res.data
+}
+
+export async function addSubscriber(data: {
+  platform: string
+  aantal: number
+  datum: string
+  notitie?: string
+}): Promise<{ id: number; message: string }> {
+  const res = await api.post('/api/business/subscribers', data)
+  return res.data
+}
+
+export async function deleteSubscriber(id: number): Promise<void> {
+  await api.delete(`/api/business/subscribers/${id}`)
+}
+
+// ─── Customers ────────────────────────────────────────────────────────────────
+
+export interface CustomerItem {
+  id: number
+  naam: string
+  platform: string
+  notitie?: string
+  geblokkeerd: boolean
+  geblokkeerd_reden?: string
+  datum: string
+  totaal_besteed: number
+}
+
+export async function getCustomers(geblokkeerd?: boolean): Promise<{ items: CustomerItem[] }> {
+  const params: Record<string, string> = {}
+  if (geblokkeerd !== undefined) params.geblokkeerd = String(geblokkeerd)
+  const res = await api.get('/api/business/customers', { params })
+  return res.data
+}
+
+export async function addCustomer(data: {
+  naam: string
+  platform: string
+  notitie?: string
+  datum: string
+}): Promise<{ id: number; message: string }> {
+  const res = await api.post('/api/business/customers', data)
+  return res.data
+}
+
+export async function updateCustomer(id: number, data: Partial<CustomerItem>): Promise<void> {
+  await api.put(`/api/business/customers/${id}`, data)
+}
+
+export async function deleteCustomer(id: number): Promise<void> {
+  await api.delete(`/api/business/customers/${id}`)
+}
+
+// ─── VAT Summary ─────────────────────────────────────────────────────────────
+
+export interface VatKwartaal {
+  kwartaal: string
+  van: string
+  tot: string
+  bedrag: number
+  btw_21: number
+  btw_netto: number
+}
+
+export interface VatSummary {
+  jaar: number
+  kwartalen: VatKwartaal[]
+  totaal_jaar: number
+  btw_21_jaar: number
+  btw_netto_jaar: number
+}
+
+export async function getVatSummary(jaar?: number): Promise<VatSummary> {
+  const params: Record<string, string> = {}
+  if (jaar !== undefined) params.jaar = String(jaar)
+  const res = await api.get('/api/business/vat-summary', { params })
+  return res.data
+}
+
 export function base64ToObjectUrl(base64: string, mimeType = 'image/jpeg'): string {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)

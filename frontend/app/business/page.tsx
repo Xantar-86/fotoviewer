@@ -334,39 +334,64 @@ export default function BusinessPage() {
                       <p className="text-white/30 text-sm">Nog geen inkomen bijgehouden</p>
                     </div>
                   ) : (
-                    <div className="table-scroll">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Platform</th>
-                          <th>Datum</th>
-                          <th>Bedrag</th>
-                          <th>Beschrijving</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <>
+                      {/* Mobile cards */}
+                      <div className="md:hidden space-y-2 p-3">
                         {incomeItems.map((item) => (
-                          <tr key={item.id}>
-                            <td><span className="badge-purple text-xs">{item.platform}</span></td>
-                            <td className="text-white/50 flex items-center gap-1.5 text-xs">
-                              <Clock className="w-3 h-3" />{item.datum}
-                            </td>
-                            <td className="text-green-400 font-bold">€{item.bedrag.toFixed(2)}</td>
-                            <td className="text-white/40 text-xs max-w-[150px] truncate">{item.beschrijving || '—'}</td>
-                            <td>
+                          <div key={item.id} className="glass-card p-4 flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-white text-sm">{item.platform}</div>
+                              <div className="text-xs text-white/40 mt-0.5 truncate">
+                                {item.datum}{item.beschrijving ? ` · ${item.beschrijving}` : ''}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                              <span className="text-green-400 font-semibold text-sm">€{item.bedrag.toFixed(2)}</span>
                               <button
                                 onClick={() => handleDeleteIncome(item.id)}
                                 className="text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            </td>
-                          </tr>
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
-                    </div>
+                      </div>
+                      {/* Desktop table */}
+                      <div className="hidden md:block table-scroll">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Platform</th>
+                              <th>Datum</th>
+                              <th>Bedrag</th>
+                              <th>Beschrijving</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {incomeItems.map((item) => (
+                              <tr key={item.id}>
+                                <td><span className="badge-purple text-xs">{item.platform}</span></td>
+                                <td className="text-white/50 flex items-center gap-1.5 text-xs">
+                                  <Clock className="w-3 h-3" />{item.datum}
+                                </td>
+                                <td className="text-green-400 font-bold">€{item.bedrag.toFixed(2)}</td>
+                                <td className="text-white/40 text-xs max-w-[150px] truncate">{item.beschrijving || '—'}</td>
+                                <td>
+                                  <button
+                                    onClick={() => handleDeleteIncome(item.id)}
+                                    className="text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

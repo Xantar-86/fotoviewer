@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react'
-import { getIncome, getOrders } from '@/lib/api'
+import { getIncome, getOrders, IncomeItem } from '@/lib/api'
+import IncomeChart from '@/components/IncomeChart'
 
 interface Stats {
   totalIncome: number
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [incomeItems, setIncomeItems] = useState<IncomeItem[]>([])
 
   useEffect(() => {
     async function loadStats() {
@@ -60,6 +62,7 @@ export default function DashboardPage() {
           pendingOrders: orders.filter((o) => o.status === 'Nieuw' || o.status === 'In behandeling').length,
           completedOrders: orders.filter((o) => o.status === 'Voltooid').length,
         })
+        setIncomeItems(incomeData.items)
         setRecentOrders(orders.slice(0, 5))
       } catch (e) {
         // API might not be running locally
@@ -197,6 +200,20 @@ export default function DashboardPage() {
             </motion.div>
           )
         })}
+      </motion.div>
+
+      {/* Income chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-8"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-4 h-4 text-purple-400" />
+          <h2 className="text-lg font-semibold text-white/70">Inkomsten dit jaar</h2>
+        </div>
+        <IncomeChart items={incomeItems} />
       </motion.div>
 
       {/* Quick actions */}
