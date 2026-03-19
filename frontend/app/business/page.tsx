@@ -11,12 +11,15 @@ import {
   ShoppingBag,
   TrendingUp,
   Calculator,
-  Filter,
   X,
-  ChevronDown,
   Loader2,
-  ArrowUpRight,
   Clock,
+  Users,
+  Ban,
+  Receipt,
+  UserCheck,
+  UserX,
+  Edit3,
 } from 'lucide-react'
 import {
   BarChart,
@@ -28,7 +31,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from 'recharts'
 import {
   getIncome,
@@ -39,11 +41,22 @@ import {
   updateOrderStatus,
   deleteOrder,
   calculatePrice,
+  getSubscribers,
+  addSubscriber,
+  deleteSubscriber,
+  getCustomers,
+  addCustomer,
+  updateCustomer,
+  deleteCustomer,
+  getVatSummary,
   IncomeItem,
   OrderItem,
+  SubscriberItem,
+  CustomerItem,
+  VatSummary,
 } from '@/lib/api'
 
-type Tab = 'inkomen' | 'bestellingen' | 'calculator'
+type Tab = 'inkomen' | 'bestellingen' | 'calculator' | 'abonnees' | 'klanten' | 'btw'
 
 const PLATFORMS = ['FeetFinder', 'OnlyFans', 'Fansly', 'Patreon', 'Instagram', 'Anders']
 const ORDER_STATUSES = ['Nieuw', 'In behandeling', 'Voltooid', 'Geannuleerd']
@@ -88,6 +101,23 @@ export default function BusinessPage() {
     status: 'Nieuw',
   })
 
+  // Subscribers state
+  const [subscribers, setSubscribers] = useState<SubscriberItem[]>([])
+  const [showAddSubscriber, setShowAddSubscriber] = useState(false)
+  const [newSubscriber, setNewSubscriber] = useState({ platform: 'FeetFinder', aantal: '', datum: today(), notitie: '' })
+
+  // Customers state
+  const [customers, setCustomers] = useState<CustomerItem[]>([])
+  const [customerFilter, setCustomerFilter] = useState<'all' | 'active' | 'blocked'>('all')
+  const [showAddCustomer, setShowAddCustomer] = useState(false)
+  const [newCustomer, setNewCustomer] = useState({ naam: '', platform: 'FeetFinder', notitie: '', datum: today() })
+  const [editingCustomer, setEditingCustomer] = useState<CustomerItem | null>(null)
+  const [blockReason, setBlockReason] = useState('')
+
+  // VAT state
+  const [vatData, setVatData] = useState<VatSummary | null>(null)
+  const [vatJaar, setVatJaar] = useState(new Date().getFullYear())
+
   // Calculator state
   const [calcBase, setCalcBase] = useState('')
   const [calcQty, setCalcQty] = useState('1')
@@ -114,8 +144,33 @@ export default function BusinessPage() {
     } catch (e) {}
   }
 
+  const fetchSubscribers = async () => {
+    try {
+      const data = await getSubscribers()
+      setSubscribers(data.items)
+    } catch (e) {}
+  }
+
+  const fetchCustomers = async () => {
+    try {
+      const filter = customerFilter === 'all' ? undefined : customerFilter === 'blocked'
+      const data = await getCustomers(filter)
+      setCustomers(data.items)
+    } catch (e) {}
+  }
+
+  const fetchVat = async () => {
+    try {
+      const data = await getVatSummary(vatJaar)
+      setVatData(data)
+    } catch (e) {}
+  }
+
   useEffect(() => { fetchIncome() }, [incomeFilter])
   useEffect(() => { fetchOrders() }, [orderFilter])
+  useEffect(() => { fetchSubscribers() }, [])
+  useEffect(() => { fetchCustomers() }, [customerFilter])
+  useEffect(() => { fetchVat() }, [vatJaar])
 
   // Income actions
   const handleAddIncome = async () => {
@@ -195,6 +250,56 @@ export default function BusinessPage() {
     }
   }
 
+  // Subscriber actions
+  const handleAddSubscriber = async () => {
+    if (!newSubscriber.aantal || parseInt(newSubscriber.aantal) < 0) { toast.error('Vul een geldig aantal in'); return }
+    setLoading(true)
+    try {
+      await addSubscriber({ ...newSubscriber, aantal: parseInt(newSubscriber.aantal) })
+      toast.success('Abonnee data toegevoegd')
+      setShowAddSubscriber(false)
+      setNewSubscriber({ platform: 'FeetFinder', aantal: '', datum: today(), notitie: '' })
+      fetchSubscribers()
+    } catch (e: any) { toast.error(e.message || 'Fout') } finally { setLoading(false) }
+  }
+
+  const handleDeleteSubscriber = async (id: number) => {
+    if (!confirm('Verwijderen?')) return
+    try { await deleteSubscriber(id); toast.success('Verwijderd'); fetchSubscribers() } catch (e: any) { toast.error(e.message || 'Fout') }
+  }
+
+  // Customer actions
+  const handleAddCustomer = async () => {
+    if (!newCustomer.naam) { toast.error('Vul een naam in'); return }
+    setLoading(true)
+    try {
+      await addCustomer(newCustomer)
+      toast.success('Klant toegevoegd')
+      setShowAddCustomer(false)
+      setNewCustomer({ naam: '', platform: 'FeetFinder', notitie: '', datum: today() })
+      fetchCustomers()
+    } catch (e: any) { toast.error(e.message || 'Fout') } finally { setLoading(false) }
+  }
+
+  const handleToggleBlock = async (customer: CustomerItem) => {
+    if (!customer.geblokkeerd && !blockReason) { toast.error('Geef een reden op'); return }
+    try {
+      await updateCustomer(customer.id, {
+        geblokkeerd: !customer.geblokkeerd,
+        geblokkeerd_reden: customer.geblokkeerd ? '' : blockReason,
+      })
+      toast.success(customer.geblokkeerd ? 'Klant gedeblokkeerd' : 'Klant geblokkeerd')
+      setBlockReason('')
+      setEditingCustomer(null)
+      fetchCustomers()
+    } catch (e: any) { toast.error(e.message || 'Fout') }
+  }
+
+  const handleDeleteCustomer = async (id: number) => {
+    if (!confirm('Klant verwijderen?')) return
+    try { await deleteCustomer(id); toast.success('Verwijderd'); fetchCustomers() } catch (e: any) { toast.error(e.message || 'Fout') }
+  }
+
   // Calculator
   const handleCalculate = async () => {
     const base = parseFloat(calcBase)
@@ -222,7 +327,10 @@ export default function BusinessPage() {
   const tabs = [
     { id: 'inkomen' as Tab, icon: Euro, label: 'Inkomen' },
     { id: 'bestellingen' as Tab, icon: ShoppingBag, label: 'Bestellingen' },
-    { id: 'calculator' as Tab, icon: Calculator, label: 'Prijscalculator' },
+    { id: 'abonnees' as Tab, icon: Users, label: 'Abonnees' },
+    { id: 'klanten' as Tab, icon: UserCheck, label: 'Klanten' },
+    { id: 'btw' as Tab, icon: Receipt, label: 'BTW' },
+    { id: 'calculator' as Tab, icon: Calculator, label: 'Calculator' },
   ]
 
   return (
@@ -561,54 +669,93 @@ export default function BusinessPage() {
                   <p className="text-white/30 text-sm">Nog geen bestellingen</p>
                 </div>
               ) : (
-                <div className="table-scroll">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Klant</th>
-                      <th>Platform</th>
-                      <th>Prijs</th>
-                      <th>Datum</th>
-                      <th>Status</th>
-                      <th>Acties</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <>
+                  {/* Mobile cards */}
+                  <div className="md:hidden space-y-2 p-3">
                     {orders.map((order) => (
-                      <tr key={order.id}>
-                        <td>
-                          <div className="font-medium text-white">{order.klant}</div>
-                          {order.beschrijving && (
-                            <div className="text-xs text-white/30 mt-0.5 max-w-[150px] truncate">{order.beschrijving}</div>
-                          )}
-                        </td>
-                        <td><span className="badge-purple text-xs">{order.platform}</span></td>
-                        <td className="text-green-400 font-bold">€{order.prijs.toFixed(2)}</td>
-                        <td className="text-white/40 text-xs">{order.datum}</td>
-                        <td>
+                      <div key={order.id} className="glass-card p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-white text-sm">{order.klant}</div>
+                            {order.beschrijving && (
+                              <div className="text-xs text-white/40 mt-0.5 truncate">{order.beschrijving}</div>
+                            )}
+                            <div className="text-xs text-white/40 mt-1">{order.datum} · {order.platform}</div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-green-400 font-semibold text-sm">€{order.prijs.toFixed(2)}</span>
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-2">
                           <select
                             value={order.status}
                             onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                            className="bg-transparent text-xs border border-white/10 rounded-lg px-2 py-1 outline-none cursor-pointer text-white/70"
+                            className="bg-transparent text-xs border border-white/10 rounded-lg px-2 py-1 outline-none cursor-pointer text-white/70 w-full"
                           >
                             {ORDER_STATUSES.map((s) => (
                               <option key={s} value={s} className="bg-[#1a1a2e]">{s}</option>
                             ))}
                           </select>
-                        </td>
-                        <td>
-                          <button
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-                </div>
+                  </div>
+                  {/* Desktop table */}
+                  <div className="hidden md:block table-scroll">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Klant</th>
+                          <th>Platform</th>
+                          <th>Prijs</th>
+                          <th>Datum</th>
+                          <th>Status</th>
+                          <th>Acties</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map((order) => (
+                          <tr key={order.id}>
+                            <td>
+                              <div className="font-medium text-white">{order.klant}</div>
+                              {order.beschrijving && (
+                                <div className="text-xs text-white/30 mt-0.5 max-w-[150px] truncate">{order.beschrijving}</div>
+                              )}
+                            </td>
+                            <td><span className="badge-purple text-xs">{order.platform}</span></td>
+                            <td className="text-green-400 font-bold">€{order.prijs.toFixed(2)}</td>
+                            <td className="text-white/40 text-xs">{order.datum}</td>
+                            <td>
+                              <select
+                                value={order.status}
+                                onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                                className="bg-transparent text-xs border border-white/10 rounded-lg px-2 py-1 outline-none cursor-pointer text-white/70"
+                              >
+                                {ORDER_STATUSES.map((s) => (
+                                  <option key={s} value={s} className="bg-[#1a1a2e]">{s}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => handleDeleteOrder(order.id)}
+                                className="text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
 
@@ -646,7 +793,7 @@ export default function BusinessPage() {
                           className="input-dark w-full"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-sm text-white/60 mb-1.5 block">Platform</label>
                           <select
@@ -680,7 +827,7 @@ export default function BusinessPage() {
                           className="input-dark w-full"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-sm text-white/60 mb-1.5 block">Datum</label>
                           <input
@@ -714,6 +861,277 @@ export default function BusinessPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* ABONNEES TAB */}
+        {activeTab === 'abonnees' && (
+          <motion.div key="abonnees" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-white/40">Bijhouden hoeveel abonnees je hebt per platform en datum</p>
+              <button onClick={() => setShowAddSubscriber(true)} className="btn-primary text-sm flex items-center gap-2 whitespace-nowrap">
+                <Plus className="w-4 h-4" /> Toevoegen
+              </button>
+            </div>
+
+            {subscribers.length === 0 ? (
+              <div className="glass-card p-10 text-center">
+                <Users className="w-10 h-10 text-white/10 mx-auto mb-3" />
+                <p className="text-white/30 text-sm">Nog geen abonnee data bijgehouden</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {subscribers.map((s) => (
+                  <div key={s.id} className="glass-card p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Users className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{s.platform}</div>
+                        <div className="text-xs text-white/40">{s.datum}{s.notitie ? ` · ${s.notitie}` : ''}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-purple-300">{s.aantal.toLocaleString()}</div>
+                        <div className="text-xs text-white/30">abonnees</div>
+                      </div>
+                      <button onClick={() => handleDeleteSubscriber(s.id)} className="text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <AnimatePresence>
+              {showAddSubscriber && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                  onClick={() => setShowAddSubscriber(false)}>
+                  <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                    className="glass-card p-6 w-full max-w-md" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="font-bold text-white">Abonnee data toevoegen</h3>
+                      <button onClick={() => setShowAddSubscriber(false)} className="text-white/30 hover:text-white"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Platform</label>
+                        <select value={newSubscriber.platform} onChange={(e) => setNewSubscriber({ ...newSubscriber, platform: e.target.value })} className="input-dark w-full">
+                          {PLATFORMS.map((p) => <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Aantal abonnees</label>
+                        <input type="number" min="0" value={newSubscriber.aantal} onChange={(e) => setNewSubscriber({ ...newSubscriber, aantal: e.target.value })} placeholder="0" className="input-dark w-full" />
+                      </div>
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Datum</label>
+                        <input type="date" value={newSubscriber.datum} onChange={(e) => setNewSubscriber({ ...newSubscriber, datum: e.target.value })} className="input-dark w-full" />
+                      </div>
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Notitie (optioneel)</label>
+                        <input type="text" value={newSubscriber.notitie} onChange={(e) => setNewSubscriber({ ...newSubscriber, notitie: e.target.value })} placeholder="bijv. na promotie" className="input-dark w-full" />
+                      </div>
+                    </div>
+                    <button onClick={handleAddSubscriber} disabled={loading} className="btn-primary w-full mt-5 flex items-center justify-center gap-2">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Toevoegen
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* KLANTEN TAB */}
+        {activeTab === 'klanten' && (
+          <motion.div key="klanten" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+              <div className="flex gap-2">
+                {(['all', 'active', 'blocked'] as const).map((f) => (
+                  <button key={f} onClick={() => setCustomerFilter(f)}
+                    className={`text-sm px-3 py-1.5 rounded-xl transition-all ${customerFilter === f ? 'bg-purple-600/40 text-purple-300 border border-purple-500/30' : 'glass-button text-white/50'}`}>
+                    {f === 'all' ? 'Alle' : f === 'active' ? 'Actief' : '🚫 Geblokkeerd'}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setShowAddCustomer(true)} className="btn-primary text-sm flex items-center gap-2 whitespace-nowrap">
+                <Plus className="w-4 h-4" /> Klant toevoegen
+              </button>
+            </div>
+
+            {customers.length === 0 ? (
+              <div className="glass-card p-10 text-center">
+                <UserCheck className="w-10 h-10 text-white/10 mx-auto mb-3" />
+                <p className="text-white/30 text-sm">Nog geen klanten bijgehouden</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {customers.map((c) => (
+                  <div key={c.id} className={`glass-card p-4 ${c.geblokkeerd ? 'border-red-500/20 bg-red-500/5' : ''}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${c.geblokkeerd ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
+                          {c.geblokkeerd ? <Ban className="w-5 h-5 text-red-400" /> : <UserCheck className="w-5 h-5 text-green-400" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-white flex items-center gap-2">
+                            {c.naam}
+                            {c.geblokkeerd && <span className="text-xs text-red-400 bg-red-500/15 px-2 py-0.5 rounded-full">Geblokkeerd</span>}
+                          </div>
+                          <div className="text-xs text-white/40">{c.platform} · {c.datum}</div>
+                          {c.notitie && <div className="text-xs text-white/30 mt-0.5 truncate">{c.notitie}</div>}
+                          {c.geblokkeerd && c.geblokkeerd_reden && (
+                            <div className="text-xs text-red-400/70 mt-0.5">Reden: {c.geblokkeerd_reden}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {editingCustomer?.id === c.id && !c.geblokkeerd ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={blockReason}
+                              onChange={(e) => setBlockReason(e.target.value)}
+                              placeholder="Reden..."
+                              className="input-dark text-xs py-1.5 px-3 w-32"
+                              autoFocus
+                            />
+                            <button onClick={() => handleToggleBlock(c)} className="text-xs px-2.5 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all whitespace-nowrap">
+                              Blokkeer
+                            </button>
+                            <button onClick={() => { setEditingCustomer(null); setBlockReason('') }} className="text-white/30 hover:text-white">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => c.geblokkeerd ? handleToggleBlock(c) : setEditingCustomer(c)}
+                              className={`text-xs px-2.5 py-1.5 rounded-lg transition-all ${c.geblokkeerd ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/10 text-red-400/70 hover:bg-red-500/20 hover:text-red-400'}`}>
+                              {c.geblokkeerd ? <UserCheck className="w-3.5 h-3.5" /> : <UserX className="w-3.5 h-3.5" />}
+                            </button>
+                            <button onClick={() => handleDeleteCustomer(c.id)} className="text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <AnimatePresence>
+              {showAddCustomer && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                  onClick={() => setShowAddCustomer(false)}>
+                  <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                    className="glass-card p-6 w-full max-w-md" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="font-bold text-white">Klant toevoegen</h3>
+                      <button onClick={() => setShowAddCustomer(false)} className="text-white/30 hover:text-white"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Naam / gebruikersnaam</label>
+                        <input type="text" value={newCustomer.naam} onChange={(e) => setNewCustomer({ ...newCustomer, naam: e.target.value })} placeholder="Gebruikersnaam klant" className="input-dark w-full" />
+                      </div>
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Platform</label>
+                        <select value={newCustomer.platform} onChange={(e) => setNewCustomer({ ...newCustomer, platform: e.target.value })} className="input-dark w-full">
+                          {PLATFORMS.map((p) => <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Notitie (optioneel)</label>
+                        <input type="text" value={newCustomer.notitie} onChange={(e) => setNewCustomer({ ...newCustomer, notitie: e.target.value })} placeholder="Voorkeuren, info, etc." className="input-dark w-full" />
+                      </div>
+                      <div>
+                        <label className="text-sm text-white/60 mb-1.5 block">Datum eerste contact</label>
+                        <input type="date" value={newCustomer.datum} onChange={(e) => setNewCustomer({ ...newCustomer, datum: e.target.value })} className="input-dark w-full" />
+                      </div>
+                    </div>
+                    <button onClick={handleAddCustomer} disabled={loading} className="btn-primary w-full mt-5 flex items-center justify-center gap-2">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Toevoegen
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* BTW TAB */}
+        {activeTab === 'btw' && (
+          <motion.div key="btw" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-white/40">BTW-overzicht op basis van je inkomsten (21%)</p>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setVatJaar(vatJaar - 1)} className="glass-button px-3 py-1.5 text-sm text-white/60 hover:text-white">‹</button>
+                <span className="text-white font-semibold px-2">{vatJaar}</span>
+                <button onClick={() => setVatJaar(vatJaar + 1)} className="glass-button px-3 py-1.5 text-sm text-white/60 hover:text-white">›</button>
+              </div>
+            </div>
+
+            {vatData && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="glass-card p-5">
+                    <div className="text-xs text-white/40 mb-1">Totaal inkomen {vatJaar}</div>
+                    <div className="text-2xl font-bold text-white">€{vatData.totaal_jaar.toFixed(2)}</div>
+                  </div>
+                  <div className="glass-card p-5">
+                    <div className="text-xs text-white/40 mb-1">BTW afdragen (21%)</div>
+                    <div className="text-2xl font-bold text-red-400">€{vatData.btw_21_jaar.toFixed(2)}</div>
+                  </div>
+                  <div className="glass-card p-5">
+                    <div className="text-xs text-white/40 mb-1">Netto inkomen</div>
+                    <div className="text-2xl font-bold text-green-400">€{vatData.btw_netto_jaar.toFixed(2)}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {vatData.kwartalen.map((kw) => (
+                    <div key={kw.kwartaal} className="glass-card p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <div className="font-bold text-white">{kw.kwartaal}</div>
+                          <div className="text-xs text-white/30">{kw.van} – {kw.tot}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-white">€{kw.bedrag.toFixed(2)}</div>
+                          <div className="text-xs text-white/30">bruto</div>
+                        </div>
+                      </div>
+                      <div className="h-px bg-white/[0.06] mb-3" />
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-white/40">BTW afdragen</span>
+                          <span className="text-red-400">€{kw.btw_21.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-white/40">Netto</span>
+                          <span className="text-green-400 font-medium">€{kw.btw_netto.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="glass-card p-4 mt-4 border-yellow-500/20 bg-yellow-500/5">
+                  <p className="text-xs text-yellow-300/70 leading-relaxed">
+                    ⚠️ Dit is een indicatief overzicht op basis van je geregistreerde inkomsten met 21% BTW. Raadpleeg altijd een boekhouder voor je officiële BTW-aangifte.
+                  </p>
+                </div>
+              </>
+            )}
           </motion.div>
         )}
 
