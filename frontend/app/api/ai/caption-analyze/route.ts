@@ -11,26 +11,32 @@ function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' |
 }
 
 const PLATFORM_CONTEXT: Record<string, string> = {
-  FeetFinder: `FeetFinder is een platform waar creators voetenfoto's en -video's verkopen aan betalende kopers.
-Schrijf een verleidelijke, zelfverzekerde caption (2-3 zinnen) die kopers aanspreekt.
-Focus op wat de voeten zo aantrekkelijk maakt: zachtheid, huidtint, nagelverzorging, pose, sfeer.
-Schrijf alsof je post om kopers aan te trekken. Toon: zelfverzekerd, uitnodigend, speels.`,
+  FeetFinder: `Je schrijft een verleidelijke verkooptekst voor FeetFinder, een platform waar voetenfoto's worden verkocht.
+Schrijf een flirterige, zelfverzekerde caption van 2-3 zinnen VANUIT de creator, gericht aan potentiële kopers.
+Focus op de aantrekkingskracht van de voeten op de foto: de zachtheid, huidtint, nagels, pose.
+Maak de koper nieuwsgierig en laat hen verlangen naar meer. Eindig met een uitnodiging.
+Voorbeeld: "Deze zachte, perfecte voeten wachten op jou 🤍 Voel de zijdezachte huid en ontdek waarom mijn fans steeds terugkomen voor meer. Wil jij ook toegang?"`,
 
-  OnlyFans: `OnlyFans is een abonnementsplatform waar fans betalen voor exclusieve content.
-Schrijf een persoonlijke, exclusieve caption (2-3 zinnen) die fans het gevoel geeft dat dit speciaal voor hen is.
-Maak hen nieuwsgierig en laat hen verlangen naar meer. Toon: intiem, persoonlijk, exclusief.`,
+  OnlyFans: `Je schrijft een intieme, exclusieve caption voor OnlyFans.
+Schrijf een persoonlijke caption van 2-3 zinnen VANUIT de creator, alsof je rechtstreeks tegen je fans spreekt.
+Geef hen het gevoel dat dit content speciaal voor hen is. Teasend, warm, exclusief.
+Maak hen verlangen naar een abonnement. Gebruik eventueel een emoji.
+Voorbeeld: "Speciaal voor mijn liefste fans 💜 Dit is precies het soort content dat jullie me altijd vragen. Abonneer je en krijg elke week meer van dit."`,
 
-  Fansly: `Fansly is een premium creator platform.
-Schrijf een mysterieuze, aantrekkelijke caption (2-3 zinnen) die hints geeft naar de content en volgers doet verlangen naar een abonnement.
-Toon: mysterieus, zelfverzekerd, exclusief.`,
+  Fansly: `Je schrijft een mysterieuze, verleidelijke caption voor Fansly.
+Schrijf een teasende caption van 2-3 zinnen VANUIT de creator.
+Hint naar wat abonnees te wachten staat zonder alles te onthullen. Mysterieus en zelfverzekerd.
+Voorbeeld: "Niet iedereen mag dit zien 🖤 Alleen mijn subscribers weten wat er nog meer is. Durf jij een kijkje te nemen?"`,
 
-  Instagram: `Instagram is een publiek social media platform.
-Schrijf een esthetische, aansprekende caption (2-3 zinnen) die mooi is en een breed publiek aanspreekt.
-Goed om een volgersbase op te bouwen en mensen door te sturen naar betaalde platforms. Toon: zelfverzekerd, artistiek, lifestyle.`,
+  Instagram: `Je schrijft een esthetische lifestyle caption voor Instagram.
+Schrijf een zelfverzekerde, artistieke caption van 2-3 zinnen VANUIT de creator.
+Focus op sfeer, esthetiek en lifestyle. Aansprekend voor een breed publiek, met link in bio verwijzing.
+Voorbeeld: "Soft, golden hour vibes ✨ Soms is het de kleine dingen die het verschil maken. Link in bio voor meer exclusieve content."`,
 
-  Patreon: `Patreon is een fan-ondersteund creator platform.
-Schrijf een warme, persoonlijke caption (2-3 zinnen) die supporters bedankt en hen het gevoel geeft dat ze iets speciaals krijgen.
-Toon: warm, dankbaar, persoonlijk.`,
+  Patreon: `Je schrijft een warme, persoonlijke caption voor Patreon.
+Schrijf een dankbare caption van 2-3 zinnen VANUIT de creator, gericht aan supporters.
+Geef hen het gevoel dat ze iets speciaals krijgen als beloning voor hun support. Warm en oprecht.
+Voorbeeld: "Dit is speciaal voor jullie, mijn trouwste supporters 💖 Zonder jullie zou dit niet mogelijk zijn. Geniet van deze exclusieve content als dankjewel."`,
 }
 
 const PLATFORM_HASHTAGS: Record<string, string[]> = {
