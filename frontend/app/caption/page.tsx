@@ -55,36 +55,43 @@ export default function CaptionPage() {
     if (stored) setApiKey(stored)
   }, [])
 
-  const onDrop = useCallback(async (accepted: File[]) => {
-    const f = accepted[0]
-    if (!f) return
-    setFile(f)
-    const url = URL.createObjectURL(f)
-    setPreview(url)
-    setSuggestedHashtags([])
-
-    const key = localStorage.getItem('anthropic_api_key')
-    if (!key) return
+  const analyzeFile = useCallback(async (f: File, currentPlatform: string) => {
+    const key = apiKey || localStorage.getItem('anthropic_api_key') || ''
+    if (!key) {
+      toast.error('Voeg eerst je Anthropic API sleutel toe in Instellingen')
+      return
+    }
     setAnalyzing(true)
+    setSuggestedHashtags([])
+    setTheme('')
     try {
       const form = new FormData()
       form.append('file', f)
       form.append('api_key', key)
-      form.append('platform', platform)
+      form.append('platform', currentPlatform)
       const res = await axios.post('/api/ai/caption-analyze', form)
       if (res.data.beschrijving) {
         setTheme(res.data.beschrijving)
-        toast.success('Foto geanalyseerd voor ' + platform + '!')
+        toast.success('Foto geanalyseerd voor ' + currentPlatform + '!')
       }
       if (res.data.hashtags?.length) {
         setSuggestedHashtags(res.data.hashtags)
       }
-    } catch {
-      // Silent fail
+    } catch (e: any) {
+      const msg = e?.response?.data?.error || e?.message || 'Analyse mislukt'
+      toast.error('AI analyse mislukt: ' + msg)
     } finally {
       setAnalyzing(false)
     }
-  }, [platform])
+  }, [apiKey])
+
+  const onDrop = useCallback((accepted: File[]) => {
+    const f = accepted[0]
+    if (!f) return
+    setFile(f)
+    setPreview(URL.createObjectURL(f))
+    analyzeFile(f, platform)
+  }, [platform, analyzeFile])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -249,25 +256,39 @@ export default function CaptionPage() {
                 <span className="text-white/30 font-normal">(optioneel)</span>
               </label>
               {preview ? (
-                <div className="relative inline-block">
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="h-24 w-24 object-cover rounded-xl border border-white/10"
-                  />
-                  {analyzing && (
-                    <div className="absolute inset-0 rounded-xl bg-black/50 flex items-center justify-center">
-                      <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
-                    </div>
-                  )}
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="relative inline-block">
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="h-24 w-24 object-cover rounded-xl border border-white/10"
+                    />
+                    {analyzing && (
+                      <div className="absolute inset-0 rounded-xl bg-black/50 flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={removeFile}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                    <p className="mt-1.5 text-[11px] text-white/40 truncate max-w-[6rem]">{file?.name}</p>
+                  </div>
                   <button
                     type="button"
-                    onClick={removeFile}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center transition-colors"
+                    onClick={() => file && analyzeFile(file, platform)}
+                    disabled={analyzing || !file}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-purple-600/30 text-purple-300 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
-                    <X className="w-3 h-3 text-white" />
+                    {analyzing ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Analyseren...</>
+                    ) : (
+                      <><Wand2 className="w-4 h-4" /> Analyseer foto met AI</>
+                    )}
                   </button>
-                  <p className="mt-1.5 text-[11px] text-white/40 truncate max-w-[6rem]">{file?.name}</p>
                 </div>
               ) : (
                 <div

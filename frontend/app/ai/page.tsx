@@ -25,6 +25,7 @@ import {
 import {
   analyzePhoto,
   generateTitles,
+  generateHashtags,
   generateSessionIdeas,
   generateReplyTemplates,
   smartEnhancePhoto,
@@ -34,7 +35,7 @@ import {
   generateBackground,
 } from '@/lib/api'
 
-type Tab = 'analyze' | 'titles' | 'ideas' | 'replies' | 'edit'
+type Tab = 'analyze' | 'titles' | 'hashtags' | 'ideas' | 'replies' | 'edit'
 
 const PLATFORMS = ['FeetFinder', 'OnlyFans', 'Fansly', 'Instagram', 'Patreon']
 const THEMES = ['elegant', 'speels', 'sensueel', 'romantisch', 'artistiek', 'sportief', 'zomers', 'luxe']
@@ -86,6 +87,10 @@ export default function AIPage() {
 
   // Titles state
   const [titles, setTitles] = useState<string[]>([])
+
+  // Hashtags state
+  const [hashtagPlatform, setHashtagPlatform] = useState('FeetFinder')
+  const [hashtags, setHashtags] = useState<string[]>([])
 
   // Session ideas state
   const [platform, setPlatform] = useState('FeetFinder')
@@ -171,6 +176,23 @@ export default function AIPage() {
       toast.success('Titels gegenereerd')
     } catch (e: any) {
       toast.error(getErrorMsg(e, 'Titels genereren mislukt'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGenerateHashtags = async () => {
+    if (!apiKey) {
+      toast.error('Vul je API sleutel in')
+      return
+    }
+    setLoading(true)
+    try {
+      const result = await generateHashtags(hashtagPlatform, apiKey, file || undefined)
+      setHashtags(result.hashtags)
+      toast.success('Hashtags gegenereerd')
+    } catch (e: any) {
+      toast.error(getErrorMsg(e, 'Hashtags genereren mislukt'))
     } finally {
       setLoading(false)
     }
@@ -311,6 +333,7 @@ export default function AIPage() {
   const tabs = [
     { id: 'analyze' as Tab, icon: Sparkles, label: "Foto's analyseren" },
     { id: 'titles' as Tab, icon: FileText, label: 'Titels genereren' },
+    { id: 'hashtags' as Tab, icon: Hash, label: 'Hashtag generator' },
     { id: 'ideas' as Tab, icon: Lightbulb, label: 'Sessie-ideeën' },
     { id: 'replies' as Tab, icon: MessageSquare, label: 'Antwoordsjablonen' },
     { id: 'edit' as Tab, icon: Wand2, label: 'AI Bewerken' },
@@ -559,6 +582,124 @@ export default function AIPage() {
                     <div className="text-center">
                       <FileText className="w-12 h-12 text-purple-400/30 mx-auto mb-3" />
                       <p className="text-white/30 text-sm">Upload een foto en genereer titels</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* HASHTAGS TAB */}
+        {activeTab === 'hashtags' && (
+          <motion.div key="hashtags" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: controls */}
+              <div className="flex flex-col gap-4">
+                {/* Platform selector */}
+                <div className="glass-card p-5">
+                  <label className="text-sm text-white/60 mb-2 block">Platform</label>
+                  <div className="flex flex-wrap gap-2">
+                    {PLATFORMS.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setHashtagPlatform(p)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          hashtagPlatform === p
+                            ? 'bg-purple-600/40 text-purple-300 border border-purple-500/40'
+                            : 'glass-button text-white/50 hover:text-white/80'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Optional photo upload */}
+                <div
+                  {...getRootProps()}
+                  className={`glass-card h-48 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
+                    isDragActive ? 'border-purple-500/50 bg-purple-500/5' : 'hover:border-purple-500/25'
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="max-h-40 max-w-full rounded-lg object-contain" />
+                  ) : (
+                    <div className="text-center">
+                      <Hash className="w-8 h-8 text-purple-400 mx-auto mb-3" />
+                      <p className="text-white/50 text-sm">Foto uploaden (optioneel)</p>
+                      <p className="text-white/25 text-xs mt-1">Voor foto-specifieke hashtags</p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleGenerateHashtags}
+                  disabled={!apiKey || loading}
+                  className="btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hash className="w-4 h-4" />}
+                  {file ? 'Hashtags genereren (foto + platform)' : 'Hashtags genereren'}
+                </button>
+              </div>
+
+              {/* Right: results */}
+              <div>
+                {hashtags.length > 0 ? (
+                  <div className="glass-card p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-semibold text-purple-300 flex items-center gap-2">
+                        <Hash className="w-3.5 h-3.5" />
+                        {hashtags.length} Hashtags voor {hashtagPlatform}
+                      </h4>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => copy(hashtags.map(h => `#${h}`).join(' '), 'all-hashtags')}
+                          className="text-xs text-white/30 hover:text-purple-400 transition-colors flex items-center gap-1"
+                        >
+                          {copied === 'all-hashtags' ? (
+                            <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                          Kopieer alles
+                        </button>
+                        <button
+                          onClick={handleGenerateHashtags}
+                          disabled={loading}
+                          className="text-xs text-white/30 hover:text-purple-400 transition-colors flex items-center gap-1"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Opnieuw
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {hashtags.map((tag, i) => (
+                        <motion.button
+                          key={i}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.02 }}
+                          onClick={() => copy(`#${tag}`, `htag-${i}`)}
+                          className={`badge-purple text-xs cursor-pointer transition-all duration-200 ${
+                            copied === `htag-${i}` ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'hover:bg-purple-500/30'
+                          }`}
+                        >
+                          #{tag}
+                        </motion.button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/25 mt-4">Klik op een hashtag om te kopiëren</p>
+                  </div>
+                ) : (
+                  <div className="glass-card h-full flex items-center justify-center p-10">
+                    <div className="text-center">
+                      <Hash className="w-12 h-12 text-purple-400/30 mx-auto mb-3" />
+                      <p className="text-white/30 text-sm">Selecteer een platform en genereer hashtags</p>
+                      <p className="text-white/20 text-xs mt-1">Optioneel: upload een foto voor specifiekere tags</p>
                     </div>
                   </div>
                 )}

@@ -406,6 +406,19 @@ export interface CaptionResult {
   hashtags: string[]
 }
 
+export async function generateHashtags(
+  platform: string,
+  apiKey: string,
+  file?: File
+): Promise<{ hashtags: string[] }> {
+  const form = new FormData()
+  form.append('platform', platform)
+  form.append('api_key', apiKey)
+  if (file) form.append('file', file)
+  const res = await api.post('/api/ai/hashtags', form)
+  return res.data
+}
+
 export async function generateCaption(
   platform: string,
   theme: string,
