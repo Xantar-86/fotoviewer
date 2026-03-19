@@ -10,8 +10,9 @@ function getSupabase() {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const body = await request.json()
   const supabase = getSupabase()
 
@@ -28,17 +29,18 @@ export async function PUT(
     if (field in body) updates[field] = body[field]
   }
 
-  const { error } = await supabase.from('klanten').update(updates).eq('id', params.id)
+  const { error } = await supabase.from('klanten').update(updates).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ message: 'Klant bijgewerkt' })
 }
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const supabase = getSupabase()
-  const { error } = await supabase.from('klanten').delete().eq('id', params.id)
+  const { error } = await supabase.from('klanten').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ message: 'Klant verwijderd' })
 }
