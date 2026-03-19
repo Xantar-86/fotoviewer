@@ -10,15 +10,15 @@ function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' |
 }
 
 const PLATFORM_CONTEXT: Record<string, string> = {
-  FeetFinder: 'FeetFinder (een platform voor voetenfoto\'s en -video\'s). Beschrijf de foto vanuit het perspectief van een voetenfotograaf: de pose, de textuur, de uitstraling, de aantrekkingskracht van de voeten/benen. Gebruik een verleidelijke maar niet expliciete toon.',
-  OnlyFans: 'OnlyFans (een exclusief contentplatform). Beschrijf de foto op een verleidelijke en persoonlijke manier die fans aanspreekt. Focus op de stemming, uitstraling en het exclusieve gevoel.',
-  Fansly: 'Fansly (een contentplatform voor exclusieve creators). Schrijf een beschrijving die de mysterieuze en exclusieve uitstraling van de foto benadrukt. Persoonlijk en aantrekkelijk.',
-  Instagram: 'Instagram (een visueel social media platform). Beschrijf de foto op een professionele, artistieke manier. Focus op de esthetiek, lichtval, compositie en sfeer.',
-  Patreon: 'Patreon (een platform voor fan-ondersteunde creators). Schrijf een warme, persoonlijke beschrijving die fans het gevoel geeft dat ze iets speciaals krijgen.',
+  FeetFinder: 'FeetFinder (foot photography platform). Describe the photo focusing on: foot pose, skin texture, nail care, lighting quality, composition, and overall aesthetic appeal. Write a creative, engaging description for a foot photography audience.',
+  OnlyFans: 'OnlyFans (exclusive content platform). Describe the photo focusing on: mood, atmosphere, composition, lighting, outfit/styling, and the overall vibe. Write a personal and engaging description for subscribers.',
+  Fansly: 'Fansly (exclusive creator platform). Describe the photo focusing on: the unique atmosphere, styling, composition, and what makes this content special. Write a description that highlights the exclusive nature.',
+  Instagram: 'Instagram (visual social media). Describe the photo focusing on: artistic composition, lighting, color palette, mood, and aesthetic. Write a professional, visually-focused description.',
+  Patreon: 'Patreon (fan-supported creator platform). Describe the photo warmly and personally, focusing on: what went into creating it, the mood, styling, and why supporters will appreciate it.',
 }
 
 const PLATFORM_HASHTAGS: Record<string, string[]> = {
-  FeetFinder: ['feetfinder', 'feetmodel', 'footmodel', 'feetpics', 'barefeet', 'feetlovers', 'toes', 'footfetish', 'prettyfeet', 'softfeet'],
+  FeetFinder: ['feetfinder', 'feetmodel', 'footmodel', 'feetpics', 'barefeet', 'feetlovers', 'toes', 'prettyfeet', 'softfeet', 'feetphotography'],
   OnlyFans: ['onlyfans', 'onlyfanscreator', 'contentcreator', 'exclusive', 'subscribe', 'fanpage', 'model', 'creator'],
   Fansly: ['fansly', 'fanslymodel', 'contentcreator', 'exclusive', 'fanslycreator', 'subscribe'],
   Instagram: ['photography', 'model', 'aesthetic', 'lifestyle', 'content', 'creator', 'instagood', 'photooftheday'],
@@ -44,33 +44,48 @@ export async function POST(request: NextRequest) {
     const client = new Anthropic({ apiKey })
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
+      max_tokens: 500,
       messages: [{
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
           {
             type: 'text',
-            text: `Je bent een ervaren content creator voor ${context}
+            text: `You are a content creator assistant for ${context}
 
-Analyseer deze foto en genereer:
-1. Een aantrekkelijke, platform-specifieke beschrijving (2-3 zinnen) die de stemming en aantrekkingskracht beschrijft — NIET alleen wat er te zien is, maar hoe het voelt en aantrekt.
-2. 5-8 specifieke hashtags gebaseerd op wat je ziet op de foto (kleur, pose, locatie, sfeer).
+Analyze this photo and generate in Dutch:
+1. A platform-specific description (2-3 sentences) capturing the mood, style, and key visual elements.
+2. 5-8 specific hashtags based on what you see (colors, pose, location, mood, style details).
 
-Return UITSLUITEND geldig JSON:
+Return ONLY valid JSON, nothing else:
 {"beschrijving": "...", "hashtags": ["tag1", "tag2", "tag3"]}`,
           },
         ],
       }],
     })
 
-    const text = (response.content[0] as any).text.trim()
-    const match = text.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('Ongeldige AI respons')
+    const rawText = (response.content[0] as any).text.trim()
 
-    const result = JSON.parse(match[0])
+    // Try to extract JSON from the response
+    const match = rawText.match(/\{[\s\S]*?\}(?=\s*$)/) || rawText.match(/\{[\s\S]*\}/)
+    if (!match) {
+      // Return a fallback using just the platform defaults if AI doesn't return JSON
+      return NextResponse.json({
+        beschrijving: '',
+        hashtags: baseHashtags,
+      })
+    }
 
-    // Merge photo-specific hashtags with platform defaults (deduplicated)
+    let result: { beschrijving?: string; hashtags?: string[] }
+    try {
+      result = JSON.parse(match[0])
+    } catch {
+      return NextResponse.json({
+        beschrijving: '',
+        hashtags: baseHashtags,
+      })
+    }
+
     const allHashtags = [...new Set([...(result.hashtags || []), ...baseHashtags])]
 
     return NextResponse.json({
