@@ -49,19 +49,28 @@ export async function POST(request: NextRequest) {
     const subjectPng = Buffer.from(await removeBgRes.arrayBuffer())
 
     const meta = await sharp(subjectPng).metadata()
-    const w = meta.width || 1080
-    const h = meta.height || 1080
+    const origW = meta.width || 1080
+    const origH = meta.height || 1080
+
+    // Cap to 1024px max for Pollinations (multiples of 8)
+    const maxDim = 1024
+    const scale = Math.min(1, maxDim / Math.max(origW, origH))
+    const genW = Math.round((origW * scale) / 8) * 8
+    const genH = Math.round((origH * scale) / 8) * 8
 
     // Step 2: Generate background via Pollinations.ai (free, no API key needed)
     const seed = Math.floor(Math.random() * 999999)
-    const bgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=${w}&height=${h}&model=flux&nologo=true&seed=${seed}`
-    const bgRes = await fetch(bgUrl, { signal: AbortSignal.timeout(90000) })
-    if (!bgRes.ok) throw new Error(`Achtergrond genereren mislukt (${bgRes.status})`)
+    const bgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(englishPrompt)}?width=${genW}&height=${genH}&seed=${seed}&nologo=true`
+    const bgRes = await fetch(bgUrl)
+    if (!bgRes.ok) {
+      const errText = await bgRes.text().catch(() => '')
+      throw new Error(`Achtergrond genereren mislukt (${bgRes.status})${errText ? ': ' + errText.slice(0, 100) : ''}`)
+    }
     const bgBuffer = Buffer.from(await bgRes.arrayBuffer())
 
-    // Step 3: Composite subject over generated background
+    // Step 3: Composite subject over generated background (resize bg to original subject size)
     const result = await (sharp(bgBuffer)
-      .resize(w, h, { fit: 'cover' })
+      .resize(origW, origH, { fit: 'cover' })
       .composite([{ input: subjectPng, blend: 'over' }])
       .jpeg({ quality: 92 })
       .toBuffer() as Promise<Buffer>)
