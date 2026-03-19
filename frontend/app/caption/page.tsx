@@ -57,8 +57,9 @@ export default function CaptionPage() {
 
   const analyzeFile = useCallback(async (f: File, currentPlatform: string) => {
     const key = apiKey || localStorage.getItem('anthropic_api_key') || ''
-    if (!key) {
-      toast.error('Voeg eerst je Anthropic API sleutel toe in Instellingen')
+    const groqKey = localStorage.getItem('groq_api_key') || ''
+    if (!key && !groqKey) {
+      toast.error('Voeg eerst een API sleutel toe in Instellingen (Groq of Anthropic)')
       return
     }
     setAnalyzing(true)
@@ -68,6 +69,7 @@ export default function CaptionPage() {
       const form = new FormData()
       form.append('file', f)
       form.append('api_key', key)
+      form.append('groq_key', groqKey)
       form.append('platform', currentPlatform)
       const res = await axios.post('/api/ai/caption-analyze', form)
       if (res.data.beschrijving) {

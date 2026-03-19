@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import Groq from 'groq-sdk'
 
 function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' {
   const t = (file.type || '').toLowerCase()
@@ -51,71 +52,76 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const apiKey = ((formData.get('api_key') as string) || '').trim()
+    const groqKey = ((formData.get('groq_key') as string) || '').trim()
     const platform = ((formData.get('platform') as string) || 'FeetFinder').trim()
     const file = formData.get('file') as File | null
 
-    if (!apiKey) return NextResponse.json({ error: 'API sleutel vereist' }, { status: 400 })
+    if (!apiKey && !groqKey) return NextResponse.json({ error: 'API sleutel vereist' }, { status: 400 })
 
-    const client = new Anthropic({ apiKey })
     const baseHashtags = PLATFORM_HASHTAGS[platform] || PLATFORM_HASHTAGS['FeetFinder']
     const platformPrompt = PLATFORM_PROMPT[platform] || PLATFORM_PROMPT['FeetFinder']
 
-    let messageContent: any[]
+    const systemMsg = 'Je bent een social media hashtag expert. Antwoord altijd met alleen geldige JSON, geen markdown, geen uitleg.'
 
-    if (file) {
-      const buffer = Buffer.from(await file.arrayBuffer())
-      const b64 = buffer.toString('base64')
-      const mediaType = detectMediaType(file)
-      messageContent = [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-        {
-          type: 'text',
-          text: `Je bent een social media expert voor ${platformPrompt}
+    let rawText = ''
 
-Analyseer deze foto en genereer 20-25 relevante hashtags specifiek voor dit platform. Mix:
-- Populaire platform-hashtags
-- Foto-specifieke hashtags (kleur, pose, sfeer, locatie, lichaamsdeel, accessoires)
-- Niche hashtags voor betere vindbaarheid
-- Trending hashtags voor het platform
+    if (groqKey) {
+      const groq = new Groq({ apiKey: groqKey })
+      let userContent: any[]
 
-Return UITSLUITEND geldig JSON:
-{"hashtags": ["tag1", "tag2", "tag3", ...]}`,
-        },
-      ]
+      if (file) {
+        const buffer = Buffer.from(await file.arrayBuffer())
+        const b64 = buffer.toString('base64')
+        const mediaType = detectMediaType(file)
+        userContent = [
+          { type: 'image_url', image_url: { url: `data:${mediaType};base64,${b64}` } },
+          { type: 'text', text: `Genereer 20-25 hashtags voor ${platformPrompt}\n\nAnalyseer de foto: gebruik foto-specifieke tags (kleur, pose, sfeer, locatie) + platform-specifieke tags.\n\nJSON: {"hashtags": ["tag1", "tag2"]}` },
+        ]
+      } else {
+        userContent = [
+          { type: 'text', text: `Genereer 25-30 krachtige hashtags voor ${platformPrompt}\n\nMix populaire, niche en trending hashtags.\n\nJSON: {"hashtags": ["tag1", "tag2"]}` },
+        ]
+      }
+
+      const res = await (groq.chat.completions.create as any)({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        max_tokens: 400,
+        messages: [{ role: 'system', content: systemMsg }, { role: 'user', content: userContent }],
+      })
+      rawText = (res.choices[0]?.message?.content || '').trim()
     } else {
-      messageContent = [
-        {
-          type: 'text',
-          text: `Je bent een social media expert voor ${platformPrompt}
+      const client = new Anthropic({ apiKey })
+      let messageContent: any[]
 
-Genereer 25-30 krachtige hashtags voor dit platform. Mix:
-- Populaire platform-hashtags met hoog bereik
-- Niche hashtags voor gerichte doelgroep
-- Trending hashtags in de community
-- Engagement-boosting hashtags
+      if (file) {
+        const buffer = Buffer.from(await file.arrayBuffer())
+        const b64 = buffer.toString('base64')
+        const mediaType = detectMediaType(file)
+        messageContent = [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text: `Genereer 20-25 hashtags voor ${platformPrompt}\n\nAnalyseer de foto. JSON: {"hashtags": ["tag1", "tag2"]}` },
+        ]
+      } else {
+        messageContent = [
+          { type: 'text', text: `Genereer 25-30 hashtags voor ${platformPrompt}\n\nJSON: {"hashtags": ["tag1", "tag2"]}` },
+        ]
+      }
 
-Return UITSLUITEND geldig JSON:
-{"hashtags": ["tag1", "tag2", "tag3", ...]}`,
-        },
-      ]
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        system: systemMsg,
+        messages: [{ role: 'user', content: messageContent }],
+      })
+      rawText = ((response.content[0] as any).text || '').trim()
     }
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
-      messages: [{ role: 'user', content: messageContent }],
-    })
-
-    const text = (response.content[0] as any).text.trim()
-    const match = text.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('Ongeldige AI respons')
-
-    const result = JSON.parse(match[0])
+    const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    const result = match ? JSON.parse(match[0]) : {}
     const aiHashtags: string[] = (result.hashtags || []).map((h: string) =>
       h.startsWith('#') ? h.slice(1) : h
     )
-
-    // Merge AI hashtags with platform defaults, deduplicated
     const allHashtags = [...new Set([...aiHashtags, ...baseHashtags])]
 
     return NextResponse.json({ hashtags: allHashtags })

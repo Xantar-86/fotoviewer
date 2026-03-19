@@ -182,13 +182,14 @@ export default function AIPage() {
   }
 
   const handleGenerateHashtags = async () => {
-    if (!apiKey) {
-      toast.error('Vul je API sleutel in')
+    const groqKey = localStorage.getItem('groq_api_key') || ''
+    if (!apiKey && !groqKey) {
+      toast.error('Voeg een API sleutel toe in Instellingen (Groq of Anthropic)')
       return
     }
     setLoading(true)
     try {
-      const result = await generateHashtags(hashtagPlatform, apiKey, file || undefined)
+      const result = await generateHashtags(hashtagPlatform, apiKey, file || undefined, groqKey)
       setHashtags(result.hashtags)
       toast.success('Hashtags gegenereerd')
     } catch (e: any) {

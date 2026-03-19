@@ -409,11 +409,13 @@ export interface CaptionResult {
 export async function generateHashtags(
   platform: string,
   apiKey: string,
-  file?: File
+  file?: File,
+  groqKey = ''
 ): Promise<{ hashtags: string[] }> {
   const form = new FormData()
   form.append('platform', platform)
   form.append('api_key', apiKey)
+  form.append('groq_key', groqKey)
   if (file) form.append('file', file)
   const res = await api.post('/api/ai/hashtags', form)
   return res.data

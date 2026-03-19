@@ -25,16 +25,19 @@ export default function SettingsPage() {
   const [watermarkText, setWatermarkText] = useState('© FeetBusiness')
   const [removeBgKey, setRemoveBgKey] = useState('')
   const [hfKey, setHfKey] = useState('')
+  const [groqKey, setGroqKey] = useState('')
 
   useEffect(() => {
     const storedKey = localStorage.getItem('anthropic_api_key') || ''
     const storedWatermark = localStorage.getItem('default_watermark') || '© FeetBusiness'
     const storedRemoveBgKey = localStorage.getItem('remove_bg_api_key') || ''
     const storedHfKey = localStorage.getItem('hf_api_key') || ''
+    const storedGroqKey = localStorage.getItem('groq_api_key') || ''
     setApiKey(storedKey)
     setWatermarkText(storedWatermark)
     setRemoveBgKey(storedRemoveBgKey)
     setHfKey(storedHfKey)
+    setGroqKey(storedGroqKey)
   }, [])
 
   const saveSettings = () => {
@@ -42,6 +45,7 @@ export default function SettingsPage() {
     localStorage.setItem('default_watermark', watermarkText)
     localStorage.setItem('remove_bg_api_key', removeBgKey)
     localStorage.setItem('hf_api_key', hfKey)
+    localStorage.setItem('groq_api_key', groqKey)
     toast.success('Instellingen opgeslagen')
   }
 
@@ -52,6 +56,7 @@ export default function SettingsPage() {
     setWatermarkText('© FeetBusiness')
     setRemoveBgKey('')
     setHfKey('')
+    setGroqKey('')
     toast.success('Alle lokale gegevens gewist')
   }
 
@@ -233,6 +238,57 @@ export default function SettingsPage() {
                 <ExternalLink className="w-3 h-3" />
               </a>
               {' '}— Gratis inference credits. Zonder sleutel wordt Pollinations.ai (volledig gratis) gebruikt.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Groq API Key */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="glass-card p-6"
+        >
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 bg-orange-500/15 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-4.5 h-4.5 text-orange-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">Groq API Sleutel</h3>
+              <p className="text-xs text-white/40">Aanbevolen voor caption AI-analyse — gratis & snel (Llama Vision)</p>
+            </div>
+            {groqKey && (
+              <span className="ml-auto badge-green text-xs flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" /> Geconfigureerd
+              </span>
+            )}
+          </div>
+
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1">
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={groqKey}
+                onChange={(e) => setGroqKey(e.target.value)}
+                placeholder="gsk_..."
+                className="input-dark w-full font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="bg-orange-500/8 border border-orange-500/15 rounded-xl p-3">
+            <p className="text-xs text-white/40 leading-relaxed">
+              Gratis account via{' '}
+              <a
+                href="https://console.groq.com/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-400 hover:text-orange-300 inline-flex items-center gap-0.5"
+              >
+                console.groq.com/keys
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              {' '}— Gratis tier, zeer snel. Gebruikt voor foto-analyse in Caption Generator & Hashtag generator.
             </p>
           </div>
         </motion.div>
