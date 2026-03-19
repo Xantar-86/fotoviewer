@@ -10,11 +10,11 @@ function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' |
 }
 
 const PLATFORM_CONTEXT: Record<string, string> = {
-  FeetFinder: 'FeetFinder — a marketplace where creators sell foot photos and videos to paying buyers. Write a short, enticing sales description (2-3 sentences) that makes buyers want to purchase this content. Focus on what makes these feet desirable: softness, skin tone, nail style, pose, and the fantasy/appeal. Write as if posting to attract buyers. Tone: flirty, confident, teasing but tasteful.',
-  OnlyFans: 'OnlyFans — a subscription platform where fans pay for exclusive content. Write a personal, teasing caption (2-3 sentences) that makes fans feel this is exclusive content just for them. Make them feel special and eager to subscribe or buy. Tone: intimate, personal, exclusive.',
-  Fansly: 'Fansly — a premium fan platform. Write a mysterious, enticing caption (2-3 sentences) that teases the content and makes followers want to subscribe for more. Hint at what they are missing. Tone: mysterious, confident, exclusive.',
-  Instagram: 'Instagram — public social media. Write an aesthetic, engaging caption (2-3 sentences) that is tasteful and visually focused. Great for building a following and directing people to paid platforms. Tone: confident, artistic, lifestyle-focused.',
-  Patreon: 'Patreon — fan-supported creator platform. Write a warm, personal caption (2-3 sentences) thanking supporters and making them feel valued for supporting this exclusive content. Tone: warm, grateful, personal.',
+  FeetFinder: 'FeetFinder (foot content creator platform). Write an engaging, confident caption that highlights the appeal of the feet in the photo — skin tone, nail care, pose, softness. The caption should make viewers want to see more content. Keep it tasteful but compelling.',
+  OnlyFans: 'OnlyFans (exclusive subscription platform). Write a personal, engaging caption from the creator to their fans. Highlight the exclusive nature of the content and make subscribers feel they are getting something special. Warm and personal tone.',
+  Fansly: 'Fansly (premium creator platform). Write a confident, engaging caption that highlights what makes this content worth subscribing for. Focus on the mood, aesthetic, and exclusivity. Compelling and personal tone.',
+  Instagram: 'Instagram (lifestyle and creator platform). Write an aesthetic, engaging caption focused on the visual appeal, mood, and lifestyle. Great composition for building a following. Confident and artistic tone.',
+  Patreon: 'Patreon (creator support platform). Write a warm, appreciative caption from the creator to their supporters. Personal and grateful tone that makes fans feel valued for their support.',
 }
 
 const PLATFORM_HASHTAGS: Record<string, string[]> = {
@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
           {
             type: 'text',
-            text: `You are writing marketing copy for: ${context}
+            text: `You are a social media content assistant for: ${context}
 
-Look at the photo and write in Dutch:
-- "beschrijving": A sales-oriented caption (2-3 sentences) written TO potential buyers/fans — not a neutral photo description, but enticing copy that makes people want to buy or subscribe. Use the specific visual details (skin, pose, nails, setting) to sell the appeal.
-- "hashtags": 5-8 specific hashtags based on what you see (colors, pose, location, style, details visible in the photo)
+Look at this photo and generate in Dutch:
+- "beschrijving": An engaging 2-3 sentence caption written for this platform's audience. Not a neutral description — write it as the creator posting this photo, highlighting what makes it appealing. Use specific details from the photo (pose, skin, nails, setting, mood).
+- "hashtags": 5-8 specific hashtags based on what you see in the photo (colors, pose, location, style details)
 
-JSON format:
-{"beschrijving": "Verleidelijke verkooptekst hier.", "hashtags": ["tag1", "tag2", "tag3"]}`,
+Respond with JSON only:
+{"beschrijving": "...", "hashtags": ["tag1", "tag2"]}`,
           },
         ],
       }],
