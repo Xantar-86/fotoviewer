@@ -4,12 +4,13 @@ async function pollStabilityResult(id: string, apiKey: string): Promise<string> 
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 3000))
     const res = await fetch(`https://api.stability.ai/v2beta/results/${id}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'image/*' },
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
     })
     if (res.status === 202) continue // still processing
     if (res.status === 200) {
-      const imageBuffer = Buffer.from(await res.arrayBuffer())
-      return imageBuffer.toString('base64')
+      const json = await res.json()
+      if (json.image) return json.image as string
+      throw new Error('Geen afbeelding in poll respons: ' + JSON.stringify(json).slice(0, 200))
     }
     let errMsg = `Stability AI poll fout (${res.status})`
     try { const t = await res.text(); errMsg = t.slice(0, 200) || errMsg } catch {}
