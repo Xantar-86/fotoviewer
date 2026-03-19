@@ -130,65 +130,15 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
 
     // ── Background change ──────────────────────────────────────────────────
     if (params.type === 'background_change') {
-      // Route 1: Stability AI → photorealistic background
-      if (stabilityKey) {
-        const stabForm = new FormData()
-        stabForm.append(
-          'subject_image',
-          new Blob([buffer], { type: file.type || 'image/jpeg' }),
-          'subject.jpg'
-        )
-        stabForm.append('background_prompt', params.background_prompt || prompt)
-        stabForm.append('foreground_ratio', '0.9')
-        stabForm.append('output_format', 'jpeg')
-
-        const stabRes = await fetch(
-          'https://api.stability.ai/v2beta/stable-image/edit/replace-background-and-relight',
-          {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${stabilityKey}`, Accept: 'image/*' },
-            body: stabForm,
-          }
-        )
-
-        if (!stabRes.ok && stabRes.status !== 202) {
-          let errMsg = `Stability AI fout (${stabRes.status})`
-          try { const t = await stabRes.text(); errMsg = t.slice(0, 300) || errMsg } catch {}
-          return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
-        }
-
-        const stabBytes = Buffer.from(await stabRes.arrayBuffer())
-        const isImage = (stabBytes[0] === 0xFF && stabBytes[1] === 0xD8) || (stabBytes[0] === 0x89 && stabBytes[1] === 0x50)
-
-        let imageBase64: string
-        if (isImage) {
-          imageBase64 = stabBytes.toString('base64')
-        } else {
-          let stabJson: any
-          try { stabJson = JSON.parse(stabBytes.toString('utf8')) } catch {
-            throw new Error('Onverwachte Stability AI respons: ' + stabBytes.slice(0, 100).toString('utf8'))
-          }
-          if (!stabJson.id) {
-            const errMsg = stabJson.message || stabJson.errors?.[0]?.message || JSON.stringify(stabJson).slice(0, 200)
-            return NextResponse.json({ error: errMsg }, { status: 400 })
-          }
-          imageBase64 = await pollStabilityResult(stabJson.id, stabilityKey)
-        }
-
-        return NextResponse.json({
-          image: imageBase64,
-          uitleg: params.uitleg || '',
-          params,
-        })
-      }
-
-      // Route 2: remove.bg + solid/gradient fallback
       if (!removeBgKey) {
         return NextResponse.json({
-          error: 'Achtergrond wijzigen vereist een Stability AI sleutel (fotorealistisch) of remove.bg sleutel. Voeg toe bij Instellingen.',
+          error: 'Achtergrond wijzigen vereist een remove.bg API sleutel. Voeg gratis toe bij Instellingen (50/maand).',
         }, { status: 400 })
       }
 
+      const bgPrompt = params.background_prompt || prompt
+
+      // Remove background from subject
       const removeBgForm = new FormData()
       removeBgForm.append('image_file', file)
       removeBgForm.append('size', 'auto')
@@ -209,10 +159,16 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
       const w = meta.width || 1080
       const h = meta.height || 1080
 
-      // Fallback: white background since new prompt format no longer has bg_color
-      const bgBuffer = await (sharp({ create: { width: w, height: h, channels: 3, background: { r: 255, g: 255, b: 255 } } }).png().toBuffer() as Promise<Buffer>)
+      // Generate photorealistic background via Pollinations.ai (free, no key needed)
+      const seed = Math.floor(Math.random() * 999999)
+      const bgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(bgPrompt)}?width=${w}&height=${h}&model=flux&nologo=true&seed=${seed}`
+      const bgRes = await fetch(bgUrl, { signal: AbortSignal.timeout(90000) })
+      if (!bgRes.ok) throw new Error(`Achtergrond genereren mislukt (${bgRes.status})`)
+      const bgBuffer = Buffer.from(await bgRes.arrayBuffer())
 
+      // Composite subject over generated background
       const result = await (sharp(bgBuffer)
+        .resize(w, h, { fit: 'cover' })
         .composite([{ input: subjectPng, blend: 'over' }])
         .jpeg({ quality: 92 })
         .toBuffer() as Promise<Buffer>)

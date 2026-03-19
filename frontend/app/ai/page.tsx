@@ -291,7 +291,7 @@ export default function AIPage() {
     setEditLoading('genbg')
     setGenBgResult(null)
     try {
-      const result = await generateBackground(file, stabilityKey, genBgPrompt, apiKey)
+      const result = await generateBackground(file, removeBgKey, genBgPrompt, apiKey)
       setGenBgResult(result)
       toast.success('AI achtergrond gegenereerd!')
     } catch (e: any) {
@@ -923,13 +923,14 @@ export default function AIPage() {
                     <span className="badge text-[10px] bg-violet-500/20 text-violet-300 border border-violet-500/30">Stability AI</span>
                   </div>
                   <p className="text-xs text-white/40 mb-3">
-                    Vervang de achtergrond met een fotorealistische AI-scène. Bijv: &ldquo;tropisch strand&rdquo;, &ldquo;kerstsfeer&rdquo;, &ldquo;professionele studio&rdquo;.
+                    Vervang de achtergrond met een fotorealistische AI-scène via gratis beeldgeneratie. Vereist remove.bg sleutel.
                   </p>
-                  {!stabilityKey && (
+                  {!removeBgKey && (
                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-3">
                       <p className="text-xs text-yellow-300/80">
-                        Vereist een Stability AI sleutel. Voeg toe bij{' '}
-                        <a href="/settings" className="text-yellow-400 underline">Instellingen</a>.
+                        Vereist een remove.bg sleutel. Voeg gratis toe bij{' '}
+                        <a href="/settings" className="text-yellow-400 underline">Instellingen</a>
+                        {' '}(50 foto&apos;s/maand).
                       </p>
                     </div>
                   )}
@@ -962,7 +963,7 @@ export default function AIPage() {
                   </div>
                   <button
                     onClick={handleGenerateBackground}
-                    disabled={!file || !stabilityKey || !genBgPrompt.trim() || editLoading !== null}
+                    disabled={!file || !removeBgKey || !genBgPrompt.trim() || editLoading !== null}
                     className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
                     style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
                   >

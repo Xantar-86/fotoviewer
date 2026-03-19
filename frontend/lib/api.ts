@@ -216,13 +216,13 @@ export async function removeBackground(
 
 export async function generateBackground(
   file: File,
-  stabilityKey: string,
+  removeBgKey: string,
   prompt: string,
   anthropicKey = ''
 ): Promise<{ image: string; uitleg: string }> {
   const form = new FormData()
   form.append('file', file)
-  form.append('api_key', stabilityKey)
+  form.append('remove_bg_key', removeBgKey)
   form.append('prompt', prompt)
   form.append('anthropic_key', anthropicKey)
   const res = await api.post('/api/ai/generate-background', form)
