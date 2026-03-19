@@ -169,7 +169,7 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
       let bgBuffer: Buffer = Buffer.alloc(0)
       if (hfKey) {
         const hfRes = await fetch(
-          'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
+          'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell',
           {
             method: 'POST',
             headers: { Authorization: `Bearer ${hfKey}`, 'Content-Type': 'application/json' },
