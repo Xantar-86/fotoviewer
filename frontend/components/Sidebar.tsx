@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
 import {
   LayoutDashboard,
   ImageIcon,
@@ -16,14 +17,16 @@ import {
   CalendarDays,
   Layers,
   Grid2X2,
+  MoreHorizontal,
+  X,
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const navItems = [
   { href: '/',             icon: LayoutDashboard, label: 'Dashboard',    description: 'Overzicht' },
   { href: '/editor',       icon: ImageIcon,       label: 'Foto Editor',  description: 'Bewerken & verwerken' },
-  { href: '/bulk',         icon: Layers,          label: 'Bulk',         description: 'Meerdere foto\'s tegelijk' },
-  { href: '/collage',     icon: Grid2X2,         label: 'Collage',      description: '2-4 foto\'s combineren' },
+  { href: '/bulk',         icon: Layers,          label: 'Bulk',         description: "Meerdere foto's tegelijk" },
+  { href: '/collage',      icon: Grid2X2,         label: 'Collage',      description: "2-4 foto's combineren" },
   { href: '/ai',           icon: Sparkles,        label: 'AI Studio',    description: 'Claude AI assistent' },
   { href: '/caption',      icon: FileText,        label: 'Captions',     description: 'Post captions genereren' },
   { href: '/vergelijking', icon: Columns,         label: 'Vergelijking', description: 'Voor/na slider' },
@@ -32,12 +35,15 @@ const navItems = [
   { href: '/settings',     icon: Settings,        label: 'Instellingen', description: 'API sleutels & voorkeur' },
 ]
 
-// Mobile nav shows only the 5 most-used items to avoid crowding
-const mobileNavItems = navItems.filter(i =>
-  ['/', '/editor', '/ai', '/business', '/settings'].includes(i.href)
+// Bottom nav: 4 main items + "Meer" button
+const bottomNavMain = navItems.filter(i =>
+  ['/', '/ai', '/business', '/settings'].includes(i.href)
+)
+const bottomNavMore = navItems.filter(i =>
+  !['/', '/ai', '/business', '/settings'].includes(i.href)
 )
 
-// ─── Desktop sidebar (hidden on mobile) ──────────────────────────────────────
+// ─── Desktop sidebar ──────────────────────────────────────────────────────────
 export default function Sidebar() {
   const pathname = usePathname()
 
@@ -66,7 +72,7 @@ export default function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 flex flex-col gap-1">
+          <nav className="flex-1 flex flex-col gap-1 overflow-y-auto">
             {navItems.map((item, index) => {
               const isActive = pathname === item.href
               const Icon = item.icon
@@ -75,7 +81,7 @@ export default function Sidebar() {
                   key={item.href}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: index * 0.04 }}
                 >
                   <Link
                     href={item.href}
@@ -115,7 +121,7 @@ export default function Sidebar() {
           </nav>
 
           {/* Footer */}
-          <div className="mt-4 px-2">
+          <div className="mt-4 px-2 flex-shrink-0">
             <div className="glass rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -135,42 +141,129 @@ export default function Sidebar() {
 }
 
 function MobileNav({ pathname }: { pathname: string }) {
+  const [showMore, setShowMore] = useState(false)
+
+  // If current page is in "more", highlight the more button
+  const isMoreActive = bottomNavMore.some(i => i.href === pathname)
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-xl border-t border-white/[0.08]" />
-      <div className="relative flex items-center justify-around px-2 py-2 safe-area-pb">
-        {mobileNavItems.map((item) => {
-          const isActive = pathname === item.href
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-0 flex-1"
-            >
-              <div className={clsx(
-                'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 overflow-hidden',
-                isActive ? 'text-purple-300' : 'text-white/40'
-              )}>
-                {isActive && (
-                  <motion.div
-                    layoutId="activeMobileNav"
-                    className="absolute inset-0 bg-gradient-to-br from-purple-600/40 to-violet-600/30 rounded-xl"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                  />
-                )}
-                <Icon className="w-5 h-5 relative z-10" />
-              </div>
-              <span className={clsx(
-                'text-[10px] font-medium leading-tight truncate w-full text-center',
-                isActive ? 'text-purple-300' : 'text-white/30'
-              )}>
-                {item.label.split(' ')[0]}
-              </span>
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+    <>
+      {/* More sheet backdrop */}
+      <AnimatePresence>
+        {showMore && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden fixed inset-0 bg-black/50 z-40"
+            onClick={() => setShowMore(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* More bottom sheet */}
+      <AnimatePresence>
+        {showMore && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="md:hidden fixed bottom-16 left-0 right-0 z-50 bg-[#0d0d1a] border-t border-white/[0.08] rounded-t-2xl px-4 pt-4 pb-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-semibold text-white/60">Alle pagina's</span>
+              <button onClick={() => setShowMore(false)} className="text-white/30 hover:text-white p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {bottomNavMore.map((item) => {
+                const isActive = pathname === item.href
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setShowMore(false)}
+                    className={clsx(
+                      'flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200',
+                      isActive
+                        ? 'bg-purple-600/30 border border-purple-500/30'
+                        : 'bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08]'
+                    )}
+                  >
+                    <Icon className={clsx('w-5 h-5', isActive ? 'text-purple-300' : 'text-white/50')} />
+                    <span className={clsx('text-[11px] font-medium text-center leading-tight', isActive ? 'text-purple-300' : 'text-white/50')}>
+                      {item.label}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Bottom nav bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-xl border-t border-white/[0.08]" />
+        <div className="relative flex items-center justify-around px-2 py-2 safe-area-pb">
+          {bottomNavMain.map((item) => {
+            const isActive = pathname === item.href
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-0 flex-1"
+              >
+                <div className={clsx(
+                  'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 overflow-hidden',
+                  isActive ? 'text-purple-300' : 'text-white/40'
+                )}>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeMobileNav"
+                      className="absolute inset-0 bg-gradient-to-br from-purple-600/40 to-violet-600/30 rounded-xl"
+                      transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+                  <Icon className="w-5 h-5 relative z-10" />
+                </div>
+                <span className={clsx(
+                  'text-[10px] font-medium leading-tight truncate w-full text-center',
+                  isActive ? 'text-purple-300' : 'text-white/30'
+                )}>
+                  {item.label.split(' ')[0]}
+                </span>
+              </Link>
+            )
+          })}
+
+          {/* Meer button */}
+          <button
+            onClick={() => setShowMore(!showMore)}
+            className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-0 flex-1"
+          >
+            <div className={clsx(
+              'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 overflow-hidden',
+              isMoreActive || showMore ? 'text-purple-300' : 'text-white/40'
+            )}>
+              {(isMoreActive || showMore) && (
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/40 to-violet-600/30 rounded-xl" />
+              )}
+              <MoreHorizontal className="w-5 h-5 relative z-10" />
+            </div>
+            <span className={clsx(
+              'text-[10px] font-medium leading-tight w-full text-center',
+              isMoreActive || showMore ? 'text-purple-300' : 'text-white/30'
+            )}>
+              Meer
+            </span>
+          </button>
+        </div>
+      </nav>
+    </>
   )
 }
