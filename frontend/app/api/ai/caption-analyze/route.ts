@@ -10,11 +10,11 @@ function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' |
 }
 
 const PLATFORM_CONTEXT: Record<string, string> = {
-  FeetFinder: 'FeetFinder (foot photography platform). Describe the photo focusing on: foot pose, skin texture, nail care, lighting quality, composition, and overall aesthetic appeal. Write a creative, engaging description for a foot photography audience.',
-  OnlyFans: 'OnlyFans (exclusive content platform). Describe the photo focusing on: mood, atmosphere, composition, lighting, outfit/styling, and the overall vibe. Write a personal and engaging description for subscribers.',
-  Fansly: 'Fansly (exclusive creator platform). Describe the photo focusing on: the unique atmosphere, styling, composition, and what makes this content special. Write a description that highlights the exclusive nature.',
-  Instagram: 'Instagram (visual social media). Describe the photo focusing on: artistic composition, lighting, color palette, mood, and aesthetic. Write a professional, visually-focused description.',
-  Patreon: 'Patreon (fan-supported creator platform). Describe the photo warmly and personally, focusing on: what went into creating it, the mood, styling, and why supporters will appreciate it.',
+  FeetFinder: 'FeetFinder — a marketplace where creators sell foot photos and videos to paying buyers. Write a short, enticing sales description (2-3 sentences) that makes buyers want to purchase this content. Focus on what makes these feet desirable: softness, skin tone, nail style, pose, and the fantasy/appeal. Write as if posting to attract buyers. Tone: flirty, confident, teasing but tasteful.',
+  OnlyFans: 'OnlyFans — a subscription platform where fans pay for exclusive content. Write a personal, teasing caption (2-3 sentences) that makes fans feel this is exclusive content just for them. Make them feel special and eager to subscribe or buy. Tone: intimate, personal, exclusive.',
+  Fansly: 'Fansly — a premium fan platform. Write a mysterious, enticing caption (2-3 sentences) that teases the content and makes followers want to subscribe for more. Hint at what they are missing. Tone: mysterious, confident, exclusive.',
+  Instagram: 'Instagram — public social media. Write an aesthetic, engaging caption (2-3 sentences) that is tasteful and visually focused. Great for building a following and directing people to paid platforms. Tone: confident, artistic, lifestyle-focused.',
+  Patreon: 'Patreon — fan-supported creator platform. Write a warm, personal caption (2-3 sentences) thanking supporters and making them feel valued for supporting this exclusive content. Tone: warm, grateful, personal.',
 }
 
 const PLATFORM_HASHTAGS: Record<string, string[]> = {
@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
           {
             type: 'text',
-            text: `Analyze this photo for ${context}
+            text: `You are writing marketing copy for: ${context}
 
-Write in Dutch:
-- "beschrijving": 2-3 sentences describing the mood, style, and visual elements of the photo for this platform
-- "hashtags": array of 5-8 specific tags based on what you see (colors, pose, location, mood, styling)
+Look at the photo and write in Dutch:
+- "beschrijving": A sales-oriented caption (2-3 sentences) written TO potential buyers/fans — not a neutral photo description, but enticing copy that makes people want to buy or subscribe. Use the specific visual details (skin, pose, nails, setting) to sell the appeal.
+- "hashtags": 5-8 specific hashtags based on what you see (colors, pose, location, style, details visible in the photo)
 
 JSON format:
-{"beschrijving": "Nederlandse beschrijving hier.", "hashtags": ["tag1", "tag2", "tag3"]}`,
+{"beschrijving": "Verleidelijke verkooptekst hier.", "hashtags": ["tag1", "tag2", "tag3"]}`,
           },
         ],
       }],
