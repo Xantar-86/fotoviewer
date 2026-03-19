@@ -24,6 +24,7 @@ async function pollStabilityResult(id: string, apiKey: string): Promise<string> 
     if (res.status === 200) {
       const json = await res.json()
       if (json.image) return json.image as string
+      if (json.result) return json.result as string
       throw new Error('Geen afbeelding in poll respons: ' + JSON.stringify(json).slice(0, 200))
     }
     let errMsg = `Stability AI poll fout (${res.status})`
