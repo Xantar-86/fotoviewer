@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       }
 
       const res = await (groq.chat.completions.create as any)({
-        model: 'llama-3.2-90b-vision-preview',
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
         max_tokens: 400,
         messages: [{ role: 'system', content: systemMsg }, { role: 'user', content: userContent }],
       })

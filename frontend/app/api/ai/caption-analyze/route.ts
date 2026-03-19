@@ -63,7 +63,7 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
   const context = PLATFORM_CONTEXT[platform] || PLATFORM_CONTEXT['FeetFinder']
 
   const response = await groq.chat.completions.create({
-    model: 'llama-3.2-90b-vision-preview',
+    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
     max_tokens: 500,
     messages: [
       {
