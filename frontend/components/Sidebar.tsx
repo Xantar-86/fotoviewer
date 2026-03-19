@@ -14,12 +14,16 @@ import {
   FileText,
   Columns,
   CalendarDays,
+  Layers,
+  Grid2X2,
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const navItems = [
   { href: '/',             icon: LayoutDashboard, label: 'Dashboard',    description: 'Overzicht' },
   { href: '/editor',       icon: ImageIcon,       label: 'Foto Editor',  description: 'Bewerken & verwerken' },
+  { href: '/bulk',         icon: Layers,          label: 'Bulk',         description: 'Meerdere foto\'s tegelijk' },
+  { href: '/collage',     icon: Grid2X2,         label: 'Collage',      description: '2-4 foto\'s combineren' },
   { href: '/ai',           icon: Sparkles,        label: 'AI Studio',    description: 'Claude AI assistent' },
   { href: '/caption',      icon: FileText,        label: 'Captions',     description: 'Post captions genereren' },
   { href: '/vergelijking', icon: Columns,         label: 'Vergelijking', description: 'Voor/na slider' },
