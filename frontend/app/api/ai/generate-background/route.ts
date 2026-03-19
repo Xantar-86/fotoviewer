@@ -50,18 +50,31 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // 200 = synchronous result (binary image)
-    // 202 = async generation started (JSON with id)
-    if (res.status === 200) {
-      const imageBuffer = Buffer.from(await res.arrayBuffer())
+    if (!res.ok && res.status !== 202) {
+      let errMsg = `Stability AI fout (${res.status})`
+      try { const t = await res.text(); errMsg = t.slice(0, 300) || errMsg } catch {}
+      return NextResponse.json({ error: errMsg }, { status: res.status === 401 ? 401 : res.status === 402 ? 402 : 400 })
+    }
+
+    const bodyBytes = Buffer.from(await res.arrayBuffer())
+
+    // Detect if body is JSON (starts with '{') or real image (starts with JPEG 0xFF 0xD8 or PNG 0x89)
+    const isImage = (bodyBytes[0] === 0xFF && bodyBytes[1] === 0xD8) || (bodyBytes[0] === 0x89 && bodyBytes[1] === 0x50)
+
+    if (isImage) {
       return NextResponse.json({
-        image: imageBuffer.toString('base64'),
+        image: bodyBytes.toString('base64'),
         uitleg: `AI heeft de achtergrond vervangen met: "${prompt}"`,
       })
     }
 
-    if (res.status === 202) {
-      const json = await res.json()
+    // Body is JSON (async id or error)
+    let json: any
+    try { json = JSON.parse(bodyBytes.toString('utf8')) } catch {
+      throw new Error('Onverwachte Stability AI respons: ' + bodyBytes.slice(0, 100).toString('utf8'))
+    }
+
+    if (json.id) {
       const imageBase64 = await pollStabilityResult(json.id, apiKey)
       return NextResponse.json({
         image: imageBase64,
@@ -69,19 +82,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Error
-    let errMsg = `Stability AI fout (${res.status})`
-    try {
-      const ct = res.headers.get('content-type') || ''
-      if (ct.includes('json')) {
-        const err = await res.json()
-        errMsg = err.message || err.errors?.[0]?.message || errMsg
-      } else {
-        const t = await res.text()
-        errMsg = t.slice(0, 200) || errMsg
-      }
-    } catch {}
-    return NextResponse.json({ error: errMsg }, { status: res.status === 401 ? 401 : res.status === 402 ? 402 : 400 })
+    const errMsg = json.message || json.errors?.[0]?.message || JSON.stringify(json).slice(0, 200)
+    return NextResponse.json({ error: errMsg }, { status: 400 })
 
   } catch (e: any) {
     const msg = e?.message || 'Onbekende fout'

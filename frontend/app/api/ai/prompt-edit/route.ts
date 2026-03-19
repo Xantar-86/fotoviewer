@@ -149,23 +149,28 @@ matte=sat0.7,brightness0.93, scherper=sharpness2.0, zachter=blur1.8`,
           }
         )
 
-        let imageBase64: string
-        if (stabRes.status === 200) {
-          const imageBuffer = Buffer.from(await stabRes.arrayBuffer())
-          imageBase64 = imageBuffer.toString('base64')
-        } else if (stabRes.status === 202) {
-          const stabJson = await stabRes.json()
-          imageBase64 = await pollStabilityResult(stabJson.id, stabilityKey)
-        } else {
+        if (!stabRes.ok && stabRes.status !== 202) {
           let errMsg = `Stability AI fout (${stabRes.status})`
-          try {
-            const ct = stabRes.headers.get('content-type') || ''
-            if (ct.includes('json')) {
-              const err = await stabRes.json()
-              errMsg = err.message || err.errors?.[0]?.message || errMsg
-            }
-          } catch {}
+          try { const t = await stabRes.text(); errMsg = t.slice(0, 300) || errMsg } catch {}
           return NextResponse.json({ error: errMsg }, { status: stabRes.status === 401 ? 401 : 400 })
+        }
+
+        const stabBytes = Buffer.from(await stabRes.arrayBuffer())
+        const isImage = (stabBytes[0] === 0xFF && stabBytes[1] === 0xD8) || (stabBytes[0] === 0x89 && stabBytes[1] === 0x50)
+
+        let imageBase64: string
+        if (isImage) {
+          imageBase64 = stabBytes.toString('base64')
+        } else {
+          let stabJson: any
+          try { stabJson = JSON.parse(stabBytes.toString('utf8')) } catch {
+            throw new Error('Onverwachte Stability AI respons: ' + stabBytes.slice(0, 100).toString('utf8'))
+          }
+          if (!stabJson.id) {
+            const errMsg = stabJson.message || stabJson.errors?.[0]?.message || JSON.stringify(stabJson).slice(0, 200)
+            return NextResponse.json({ error: errMsg }, { status: 400 })
+          }
+          imageBase64 = await pollStabilityResult(stabJson.id, stabilityKey)
         }
 
         return NextResponse.json({
