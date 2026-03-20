@@ -48,6 +48,36 @@ const STATUS_STYLES: Record<string, { badge: string; dot: string }> = {
   geannuleerd: { badge: 'bg-red-500/20    text-red-400    border border-red-500/30',    dot: 'bg-red-400' },
 }
 
+// ─── April 2026 content calendar preset ───────────────────────────────────────
+
+const APRIL_CALENDAR = [
+  // Week 1 - Fresh Start
+  { datum: '2026-04-01', platform: 'FeetFinder', titel: 'Lente intro — voeten in het gras', beschrijving: 'Styling: nude nagels, enkelbandjes\nCaption: "Spring is here and so am I 🌸"', status: 'gepland', kleur: '#22c55e' },
+  { datum: '2026-04-03', platform: 'FeetFinder', titel: 'Bovenaanzicht marmeren vloer', beschrijving: 'Styling: rode nagels, olie op huid\nCaption: "Marble never looked this good 🤍"', status: 'gepland', kleur: '#22c55e' },
+  { datum: '2026-04-05', platform: 'FeetFinder', titel: 'Voeten omhoog tegen witte muur', beschrijving: 'Styling: french manicure\nCaption: "Simple. Clean. Irresistible."', status: 'gepland', kleur: '#22c55e' },
+  { datum: '2026-04-06', platform: 'FeetFinder', titel: '🎥 Video — wiggling toes close-up', beschrijving: 'Styling: pastelroze nagels\nCaption: "You asked for it... 🎀"', status: 'gepland', kleur: '#22c55e' },
+  // Week 2 - Luxury Vibes
+  { datum: '2026-04-07', platform: 'FeetFinder', titel: 'Zijden lakens — voeten gestrekt', beschrijving: 'Styling: bordeaux nagels\nCaption: "Monday mood 🍷"', status: 'gepland', kleur: '#a855f7' },
+  { datum: '2026-04-09', platform: 'FeetFinder', titel: 'Voeten in warm bad met rozenblaadjes', beschrijving: 'Styling: naturel, ongelakt\nCaption: "Self-care Sunday... on a Wednesday 🌹"', status: 'gepland', kleur: '#a855f7' },
+  { datum: '2026-04-11', platform: 'FeetFinder', titel: 'Enkelbandjes close-up — macro shot', beschrijving: 'Styling: goud/zilver juwelen\nCaption: "Details that make the difference ✨"', status: 'gepland', kleur: '#a855f7' },
+  { datum: '2026-04-12', platform: 'FeetFinder', titel: 'Bij kaarslicht — voetzolen zichtbaar', beschrijving: 'Styling: glitter nagels\nCaption: "Late night, just for you 🕯️"', status: 'gepland', kleur: '#a855f7' },
+  // Week 3 - Outdoor & Fresh
+  { datum: '2026-04-14', platform: 'FeetFinder', titel: 'Terras bij zonsondergang', beschrijving: 'Styling: olie op huid, naturel nagels\nCaption: "Golden hour hits different 🌅"', status: 'gepland', kleur: '#3b82f6' },
+  { datum: '2026-04-15', platform: 'FeetFinder', titel: 'Bloemen tussen de tenen', beschrijving: 'Styling: witte nagels\nCaption: "Picked these just for the shoot 🌼"', status: 'gepland', kleur: '#3b82f6' },
+  { datum: '2026-04-17', platform: 'FeetFinder', titel: 'Voeten in het zand', beschrijving: 'Styling: nude nagels + enkelbandje\nCaption: "Beach mode: activated 🏖️"', status: 'gepland', kleur: '#3b82f6' },
+  { datum: '2026-04-19', platform: 'FeetFinder', titel: '🎥 Video — voeten in gras', beschrijving: 'Styling: pastelgroen nagels\nCaption: "POV: you found me 🌿"', status: 'gepland', kleur: '#3b82f6' },
+  { datum: '2026-04-20', platform: 'FeetFinder', titel: 'Reflectie in spiegel — creatief shot', beschrijving: 'Styling: zwarte nagels\nCaption: "Two for the price of one 😏"', status: 'gepland', kleur: '#3b82f6' },
+  // Week 4 - Tease & Exclusive
+  { datum: '2026-04-21', platform: 'FeetFinder', titel: 'Close-up voetboog — hoge mule', beschrijving: 'Styling: rode nagels, hak zichtbaar\nCaption: "Size EU 39 never looked bigger 🔥"', status: 'gepland', kleur: '#ec4899' },
+  { datum: '2026-04-22', platform: 'FeetFinder', titel: 'Jacuzzi / bad — glanzende natte huid', beschrijving: 'Styling: naturel\nCaption: "Fresh out of the bath 💦"', status: 'gepland', kleur: '#ec4899' },
+  { datum: '2026-04-24', platform: 'FeetFinder', titel: 'Flat lay — voeten + bloemen + accessoires', beschrijving: 'Styling: pastelpaars nagels\nCaption: "Aesthetic overload 💜"', status: 'gepland', kleur: '#ec4899' },
+  { datum: '2026-04-25', platform: 'FeetFinder', titel: 'Custom content preview — half zichtbaar', beschrijving: 'Styling: jouw keuze\nCaption: "Want the full version? You know where to find me 😉"', status: 'gepland', kleur: '#ec4899' },
+  { datum: '2026-04-26', platform: 'FeetFinder', titel: 'Witte sokken half uit — speels', beschrijving: 'Styling: kleurrijke nagels\nCaption: "Accidentally your new obsession 🧦"', status: 'gepland', kleur: '#ec4899' },
+  // Week 5 - Wrap-up
+  { datum: '2026-04-28', platform: 'FeetFinder', titel: 'Kaarslicht + zijden stof — sensueel', beschrijving: 'Styling: nude nagels, olie\nCaption: "April\'s almost over... don\'t miss out 🤍"', status: 'gepland', kleur: '#f97316' },
+  { datum: '2026-04-30', platform: 'FeetFinder', titel: 'Best-of recap / teaser voor mei', beschrijving: 'Styling: jouw favoriete look\nCaption: "See you in May 🌸 Subscribe for what\'s coming..."', status: 'gepland', kleur: '#f97316' },
+]
+
 function toDateStr(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
@@ -75,6 +105,9 @@ export default function KalenderPage() {
   const [showAdd, setShowAdd]   = useState(false)
   const [addForm, setAddForm]   = useState<Omit<CalendarItem, 'id'>>(emptyForm())
   const [saving, setSaving]     = useState(false)
+
+  // Import state
+  const [importing, setImporting] = useState(false)
 
   // Edit modal
   const [editItem, setEditItem] = useState<CalendarItem | null>(null)
@@ -214,6 +247,26 @@ export default function KalenderPage() {
     }
   }
 
+  // ─── Import April calendar ───────────────────────────────────────────────────
+
+  async function handleImportApril() {
+    setImporting(true)
+    let success = 0
+    let failed = 0
+    for (const entry of APRIL_CALENDAR) {
+      try {
+        await addCalendarItem(entry)
+        success++
+      } catch {
+        failed++
+      }
+    }
+    await loadItems()
+    if (failed === 0) toast.success(`${success} content ideeën toegevoegd aan april!`)
+    else toast.error(`${success} toegevoegd, ${failed} mislukt`)
+    setImporting(false)
+  }
+
   // ─── Grouped list (mobile) ───────────────────────────────────────────────────
 
   function buildGroupedItems() {
@@ -330,13 +383,23 @@ export default function KalenderPage() {
             <p className="text-xs text-white/40">Plan je content per platform</p>
           </div>
         </div>
-        <button
-          onClick={() => openAdd(todayStr)}
-          className="glass-button btn-primary flex items-center gap-2 text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Toevoegen</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleImportApril}
+            disabled={importing}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30 disabled:opacity-40 transition-all"
+          >
+            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
+            <span className="hidden sm:inline">{importing ? 'Importeren...' : 'Importeer April kalender'}</span>
+          </button>
+          <button
+            onClick={() => openAdd(todayStr)}
+            className="glass-button btn-primary flex items-center gap-2 text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Toevoegen</span>
+          </button>
+        </div>
       </motion.div>
 
       {/* Month navigation */}
