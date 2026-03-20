@@ -316,55 +316,47 @@ export default function KalenderPage() {
     onChange: (patch: Partial<Omit<CalendarItem, 'id'>>) => void
   }) {
     return (
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs text-white/50 mb-1.5">Datum</label>
-          <input
-            type="date"
-            value={form.datum}
-            onChange={e => onChange({ datum: e.target.value })}
-            className="input-dark w-full"
-          />
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Datum</label>
+            <input
+              type="date"
+              value={form.datum}
+              onChange={e => onChange({ datum: e.target.value })}
+              className="input-dark w-full text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Platform</label>
+            <select
+              value={form.platform}
+              onChange={e => onChange({ platform: e.target.value })}
+              className="input-dark w-full text-sm"
+            >
+              {PLATFORMS.map(p => (
+                <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <div>
-          <label className="block text-xs text-white/50 mb-1.5">Platform</label>
-          <select
-            value={form.platform}
-            onChange={e => onChange({ platform: e.target.value })}
-            className="input-dark w-full"
-          >
-            {PLATFORMS.map(p => (
-              <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs text-white/50 mb-1.5">Titel <span className="text-red-400">*</span></label>
+          <label className="block text-xs text-white/50 mb-1">Titel <span className="text-red-400">*</span></label>
           <input
             type="text"
             value={form.titel}
             onChange={e => onChange({ titel: e.target.value })}
             placeholder="Bijv. nieuwe foto set..."
-            className="input-dark w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-white/50 mb-1.5">Beschrijving (optioneel)</label>
-          <textarea
-            value={form.beschrijving}
-            onChange={e => onChange({ beschrijving: e.target.value })}
-            placeholder="Extra details..."
-            rows={3}
-            className="input-dark w-full resize-none"
+            className="input-dark w-full text-sm"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-white/50 mb-1.5">Status</label>
+            <label className="block text-xs text-white/50 mb-1">Status</label>
             <select
               value={form.status}
               onChange={e => onChange({ status: e.target.value })}
-              className="input-dark w-full"
+              className="input-dark w-full text-sm"
             >
               {STATUSES.map(s => (
                 <option key={s} value={s} className="bg-[#1a1a2e]">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
@@ -372,17 +364,27 @@ export default function KalenderPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-white/50 mb-1.5">Kleur</label>
+            <label className="block text-xs text-white/50 mb-1">Kleur</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 value={form.kleur}
                 onChange={e => onChange({ kleur: e.target.value })}
-                className="w-10 h-10 rounded-lg border border-white/10 bg-transparent cursor-pointer flex-shrink-0"
+                className="w-9 h-9 rounded-lg border border-white/10 bg-transparent cursor-pointer flex-shrink-0"
               />
               <span className="text-xs text-white/40 font-mono">{form.kleur}</span>
             </div>
           </div>
+        </div>
+        <div>
+          <label className="block text-xs text-white/50 mb-1">Beschrijving (optioneel)</label>
+          <textarea
+            value={form.beschrijving}
+            onChange={e => onChange({ beschrijving: e.target.value })}
+            placeholder="Extra details..."
+            rows={2}
+            className="input-dark w-full resize-none text-sm"
+          />
         </div>
       </div>
     )
@@ -655,45 +657,30 @@ export default function KalenderPage() {
               onClick={() => setShowAdd(false)}
             />
             {/* Animatie-wrapper: alleen transform, geen overflow */}
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-              className="fixed inset-x-0 bottom-0 z-50"
-            >
-              {/* Scroll-container: geen transform, sticky footer werkt hierin */}
-              <div
-                className="rounded-t-2xl border border-purple-500/10 shadow-2xl"
-                style={{
-                  background: 'rgba(10, 10, 20, 0.97)',
-                  maxHeight: '88vh',
-                  overflowY: 'auto',
-                  WebkitOverflowScrolling: 'touch' as any,
-                }}
+            {/* fixed inset-0 flex items-end: stabieler dan fixed bottom-0 op iOS */}
+            <div className="fixed inset-0 z-50 flex items-end pointer-events-none">
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+                className="w-full pointer-events-auto"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="px-6 pt-5 pb-0">
-                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
+                <div className="rounded-t-2xl border border-purple-500/10 shadow-2xl px-5 pt-4 pb-6"
+                     style={{ background: 'rgba(10, 10, 20, 0.97)' }}>
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Plus className="w-4 h-4 text-purple-400" />
-                      <h2 className="text-base font-semibold text-white">Nieuw item</h2>
+                      <h2 className="text-sm font-semibold text-white">Nieuw item</h2>
                     </div>
-                    <button onClick={() => setShowAdd(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
+                    <button onClick={() => setShowAdd(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white/80">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-                <div className="px-6 pb-2">
                   <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
-                </div>
-                {/* Sticky footer kleeft aan onderkant scroll-container */}
-                <div
-                  className="sticky bottom-0 px-6 pt-3 pb-8 border-t border-white/[0.06]"
-                  style={{ background: 'rgba(10, 10, 20, 0.97)' }}
-                >
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 mt-4">
                     <button onClick={() => setShowAdd(false)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
                     <button onClick={handleAdd} disabled={saving} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -701,8 +688,8 @@ export default function KalenderPage() {
                     </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
@@ -716,59 +703,29 @@ export default function KalenderPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setEditItem(null)}
             />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-              className="fixed inset-x-0 bottom-0 z-50"
-            >
-              <div
-                className="rounded-t-2xl border border-purple-500/10 shadow-2xl"
-                style={{
-                  background: 'rgba(10, 10, 20, 0.97)',
-                  maxHeight: '88vh',
-                  overflowY: 'auto',
-                  WebkitOverflowScrolling: 'touch' as any,
-                }}
+            <div className="fixed inset-0 z-50 flex items-end pointer-events-none">
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+                className="w-full pointer-events-auto"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="px-6 pt-5 pb-0">
-                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
+                <div className="rounded-t-2xl border border-purple-500/10 shadow-2xl px-5 pt-4 pb-6"
+                     style={{ background: 'rgba(10, 10, 20, 0.97)' }}>
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Edit3 className="w-4 h-4 text-purple-400" />
-                      <h2 className="text-base font-semibold text-white">Item bewerken</h2>
+                      <h2 className="text-sm font-semibold text-white">Item bewerken</h2>
                     </div>
-                    <button onClick={() => setEditItem(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
+                    <button onClick={() => setEditItem(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white/80">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-                <div className="px-6 pb-2">
                   <FormFields form={editForm} onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
-                  <div className="mt-4 mb-2">
-                    <label className="block text-xs text-white/50 mb-2">Snel status wijzigen</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {STATUSES.map(s => {
-                        const st = STATUS_STYLES[s] || STATUS_STYLES.gepland
-                        return (
-                          <button key={s} onClick={() => setEditForm(f => ({ ...f, status: s }))}
-                            className={['text-xs px-3 py-1.5 rounded-full font-medium transition-all',
-                              editForm.status === s ? st.badge + ' ring-1 ring-offset-1 ring-offset-black/20 ring-current' : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08]',
-                            ].join(' ')}>
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className="sticky bottom-0 px-6 pt-3 pb-8 border-t border-white/[0.06]"
-                  style={{ background: 'rgba(10, 10, 20, 0.97)' }}
-                >
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 mt-4">
                     <button onClick={handleDelete} disabled={deleting || saving} className="glass-button text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 disabled:opacity-50">
                       {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       Verwijderen
@@ -780,8 +737,8 @@ export default function KalenderPage() {
                     </button>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
