@@ -317,26 +317,28 @@ export default function KalenderPage() {
   }) {
     return (
       <div className="space-y-3">
-        <div>
-          <label className="block text-xs text-white/50 mb-1">Datum</label>
-          <input
-            type="date"
-            value={form.datum}
-            onChange={e => onChange({ datum: e.target.value })}
-            className="input-dark w-full text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-white/50 mb-1">Platform</label>
-          <select
-            value={form.platform}
-            onChange={e => onChange({ platform: e.target.value })}
-            className="input-dark w-full text-sm"
-          >
-            {PLATFORMS.map(p => (
-              <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>
-            ))}
-          </select>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'auto 1fr' }}>
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Datum</label>
+            <input
+              type="date"
+              value={form.datum}
+              onChange={e => onChange({ datum: e.target.value })}
+              className="input-dark text-sm"
+            />
+          </div>
+          <div className="min-w-0">
+            <label className="block text-xs text-white/50 mb-1">Platform</label>
+            <select
+              value={form.platform}
+              onChange={e => onChange({ platform: e.target.value })}
+              className="input-dark w-full text-sm"
+            >
+              {PLATFORMS.map(p => (
+                <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <div>
           <label className="block text-xs text-white/50 mb-1">Titel <span className="text-red-400">*</span></label>
