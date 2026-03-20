@@ -19,6 +19,7 @@ import {
   Grid2X2,
   MoreHorizontal,
   X,
+  Rocket,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/collage',      icon: Grid2X2,         label: 'Collage',      description: "2-4 foto's combineren" },
   { href: '/ai',           icon: Sparkles,        label: 'AI Studio',    description: 'Claude AI assistent' },
   { href: '/caption',      icon: FileText,        label: 'Captions',     description: 'Post captions genereren' },
+  { href: '/postcreator',  icon: Rocket,          label: 'Post Creator', description: 'Platform-ready posts' },
   { href: '/vergelijking', icon: Columns,         label: 'Vergelijking', description: 'Voor/na slider' },
   { href: '/kalender',     icon: CalendarDays,    label: 'Kalender',     description: 'Content planning' },
   { href: '/business',     icon: BarChart3,       label: 'Business',     description: 'Inkomsten & bestellingen' },

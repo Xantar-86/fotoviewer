@@ -438,6 +438,21 @@ export async function generateCaption(
   return res.data
 }
 
+export async function generatePostContent(
+  file: File,
+  platforms: string[],
+  groqKey: string,
+  apiKey: string
+): Promise<{ results: Record<string, { caption: string; hashtags: string[] }> }> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('platforms', platforms.join(','))
+  form.append('groq_key', groqKey)
+  form.append('api_key', apiKey)
+  const res = await api.post('/api/ai/post-creator', form)
+  return res.data
+}
+
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 export interface CalendarItem {
