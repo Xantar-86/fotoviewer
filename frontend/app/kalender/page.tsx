@@ -653,12 +653,12 @@ export default function KalenderPage() {
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm"
               onClick={() => setShowAdd(false)}
             />
             {/* Animatie-wrapper: alleen transform, geen overflow */}
             {/* fixed inset-0 flex items-end: stabieler dan fixed bottom-0 op iOS */}
-            <div className="fixed inset-0 z-50 flex items-end pointer-events-none">
+            <div className="fixed inset-0 z-[60] flex items-end pointer-events-none">
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
@@ -667,8 +667,8 @@ export default function KalenderPage() {
                 className="w-full pointer-events-auto"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="rounded-t-2xl border border-purple-500/10 shadow-2xl px-5 pt-4 pb-6"
-                     style={{ background: 'rgba(10, 10, 20, 0.97)' }}>
+                <div className="rounded-t-2xl border border-purple-500/10 shadow-2xl px-5 pt-4"
+                     style={{ background: 'rgba(10, 10, 20, 0.97)', paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
                   <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -700,10 +700,10 @@ export default function KalenderPage() {
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm"
               onClick={() => setEditItem(null)}
             />
-            <div className="fixed inset-0 z-50 flex items-end pointer-events-none">
+            <div className="fixed inset-0 z-[60] flex items-end pointer-events-none">
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
@@ -712,8 +712,8 @@ export default function KalenderPage() {
                 className="w-full pointer-events-auto"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="rounded-t-2xl border border-purple-500/10 shadow-2xl px-5 pt-4 pb-6"
-                     style={{ background: 'rgba(10, 10, 20, 0.97)' }}>
+                <div className="rounded-t-2xl border border-purple-500/10 shadow-2xl px-5 pt-4"
+                     style={{ background: 'rgba(10, 10, 20, 0.97)', paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}>
                   <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
