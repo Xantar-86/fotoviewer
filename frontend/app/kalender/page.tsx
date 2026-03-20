@@ -654,21 +654,27 @@ export default function KalenderPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setShowAdd(false)}
             />
-            {/* Positionerings-wrapper: geen overflow, geen transform */}
-            <div className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center">
-              {/* max-height op de flex-container zelf zodat flex-1 kind correct werkt */}
-              <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4"
-                style={{ maxHeight: '90svh' }}
+            {/* Animatie-wrapper: alleen transform, geen overflow */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              className="fixed inset-x-0 bottom-0 z-50"
+            >
+              {/* Scroll-container: geen transform, sticky footer werkt hierin */}
+              <div
+                className="rounded-t-2xl border border-purple-500/10 shadow-2xl"
+                style={{
+                  background: 'rgba(10, 10, 20, 0.97)',
+                  maxHeight: '88vh',
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch' as any,
+                }}
                 onClick={e => e.stopPropagation()}
               >
-                {/* Sticky header */}
-                <div className="flex-shrink-0 px-6 pt-5 pb-0">
-                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
+                <div className="px-6 pt-5 pb-0">
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Plus className="w-4 h-4 text-purple-400" />
@@ -679,12 +685,14 @@ export default function KalenderPage() {
                     </button>
                   </div>
                 </div>
-                {/* Scrollbaar formulier */}
-                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
+                <div className="px-6 pb-2">
                   <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
                 </div>
-                {/* Sticky footer — altijd zichtbaar, nooit te scrollen */}
-                <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.06]">
+                {/* Sticky footer kleeft aan onderkant scroll-container */}
+                <div
+                  className="sticky bottom-0 px-6 pt-3 pb-8 border-t border-white/[0.06]"
+                  style={{ background: 'rgba(10, 10, 20, 0.97)' }}
+                >
                   <div className="flex gap-3">
                     <button onClick={() => setShowAdd(false)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
                     <button onClick={handleAdd} disabled={saving} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
@@ -693,8 +701,8 @@ export default function KalenderPage() {
                     </button>
                   </div>
                 </div>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
@@ -708,19 +716,25 @@ export default function KalenderPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setEditItem(null)}
             />
-            <div className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center">
-              <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4"
-                style={{ maxHeight: '90svh' }}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              className="fixed inset-x-0 bottom-0 z-50"
+            >
+              <div
+                className="rounded-t-2xl border border-purple-500/10 shadow-2xl"
+                style={{
+                  background: 'rgba(10, 10, 20, 0.97)',
+                  maxHeight: '88vh',
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch' as any,
+                }}
                 onClick={e => e.stopPropagation()}
               >
-                {/* Sticky header */}
-                <div className="flex-shrink-0 px-6 pt-5 pb-0">
-                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
+                <div className="px-6 pt-5 pb-0">
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Edit3 className="w-4 h-4 text-purple-400" />
@@ -731,8 +745,7 @@ export default function KalenderPage() {
                     </button>
                   </div>
                 </div>
-                {/* Scrollbaar formulier + status knoppen */}
-                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
+                <div className="px-6 pb-2">
                   <FormFields form={editForm} onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
                   <div className="mt-4 mb-2">
                     <label className="block text-xs text-white/50 mb-2">Snel status wijzigen</label>
@@ -751,8 +764,10 @@ export default function KalenderPage() {
                     </div>
                   </div>
                 </div>
-                {/* Sticky footer — altijd zichtbaar */}
-                <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.06]">
+                <div
+                  className="sticky bottom-0 px-6 pt-3 pb-8 border-t border-white/[0.06]"
+                  style={{ background: 'rgba(10, 10, 20, 0.97)' }}
+                >
                   <div className="flex gap-3">
                     <button onClick={handleDelete} disabled={deleting || saving} className="glass-button text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 disabled:opacity-50">
                       {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -765,8 +780,8 @@ export default function KalenderPage() {
                     </button>
                   </div>
                 </div>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
