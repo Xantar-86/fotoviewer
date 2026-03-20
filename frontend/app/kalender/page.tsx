@@ -623,148 +623,105 @@ export default function KalenderPage() {
       {/* ── Add item modal ── */}
       <AnimatePresence>
         {showAdd && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowAdd(false)}
-          >
-            <div className="flex min-h-full items-start justify-center p-4 pt-8">
+          <>
+            {/* Backdrop — apart van de modal zodat scrollen niet sluit */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
-              className="glass-card w-full max-w-md mb-8"
-              onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowAdd(false)}
+            />
+            {/* Bottom sheet op mobiel, centered op desktop */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:bottom-auto"
             >
-              {/* Modal header */}
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-purple-400" />
-                  <h2 className="text-base font-semibold text-white">Nieuw item</h2>
+              <div className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[92vh] overflow-y-auto overscroll-contain p-6 md:mx-4">
+                {/* Drag handle op mobiel */}
+                <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-purple-400" />
+                    <h2 className="text-base font-semibold text-white">Nieuw item</h2>
+                  </div>
+                  <button onClick={() => setShowAdd(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowAdd(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
-
-              {/* Actions */}
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowAdd(false)}
-                  className="flex-1 glass-button text-sm text-white/60"
-                >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleAdd}
-                  disabled={saving}
-                  className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Opslaan
-                </button>
+                <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
+                <div className="flex gap-3 mt-6 pb-safe">
+                  <button onClick={() => setShowAdd(false)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
+                  <button onClick={handleAdd} disabled={saving} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    Opslaan
+                  </button>
+                </div>
               </div>
             </motion.div>
-            </div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
 
       {/* ── Edit / delete modal ── */}
       <AnimatePresence>
         {editItem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
-            onClick={() => setEditItem(null)}
-          >
-            <div className="flex min-h-full items-start justify-center p-4 pt-8">
+          <>
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
-              className="glass-card w-full max-w-md mb-8"
-              onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setEditItem(null)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:bottom-auto"
             >
-              {/* Modal header */}
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                  <Edit3 className="w-4 h-4 text-purple-400" />
-                  <h2 className="text-base font-semibold text-white">Item bewerken</h2>
+              <div className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[92vh] overflow-y-auto overscroll-contain p-6 md:mx-4">
+                <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-purple-400" />
+                    <h2 className="text-base font-semibold text-white">Item bewerken</h2>
+                  </div>
+                  <button onClick={() => setEditItem(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setEditItem(null)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <FormFields form={editForm} onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
-
-              {/* Status quick-select */}
-              <div className="mt-4">
-                <label className="block text-xs text-white/50 mb-2">Snel status wijzigen</label>
-                <div className="flex gap-2 flex-wrap">
-                  {STATUSES.map(s => {
-                    const st = STATUS_STYLES[s] || STATUS_STYLES.gepland
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => setEditForm(f => ({ ...f, status: s }))}
-                        className={[
-                          'text-xs px-3 py-1.5 rounded-full font-medium transition-all',
-                          editForm.status === s
-                            ? st.badge + ' ring-1 ring-offset-1 ring-offset-black/20 ring-current'
-                            : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08]',
-                        ].join(' ')}
-                      >
-                        {s.charAt(0).toUpperCase() + s.slice(1)}
-                      </button>
-                    )
-                  })}
+                <FormFields form={editForm} onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
+                <div className="mt-4">
+                  <label className="block text-xs text-white/50 mb-2">Snel status wijzigen</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {STATUSES.map(s => {
+                      const st = STATUS_STYLES[s] || STATUS_STYLES.gepland
+                      return (
+                        <button key={s} onClick={() => setEditForm(f => ({ ...f, status: s }))}
+                          className={['text-xs px-3 py-1.5 rounded-full font-medium transition-all',
+                            editForm.status === s ? st.badge + ' ring-1 ring-offset-1 ring-offset-black/20 ring-current' : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08]',
+                          ].join(' ')}>
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting || saving}
-                  className="glass-button text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 disabled:opacity-50"
-                >
-                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  Verwijderen
-                </button>
-                <button
-                  onClick={() => setEditItem(null)}
-                  className="flex-1 glass-button text-sm text-white/60"
-                >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleUpdate}
-                  disabled={saving || deleting}
-                  className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
-                  Opslaan
-                </button>
+                <div className="flex gap-3 mt-6 pb-safe">
+                  <button onClick={handleDelete} disabled={deleting || saving} className="glass-button text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 disabled:opacity-50">
+                    {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Verwijderen
+                  </button>
+                  <button onClick={() => setEditItem(null)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
+                  <button onClick={handleUpdate} disabled={saving || deleting} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
+                    Opslaan
+                  </button>
+                </div>
               </div>
             </motion.div>
-            </div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
