@@ -654,36 +654,44 @@ export default function KalenderPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setShowAdd(false)}
             />
-            {/* Scroll-container: geen transform, body scroll is al gelocked */}
-            <div
-              className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center"
-              style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
-            >
+            {/* Positionerings-wrapper: geen overflow, geen transform */}
+            <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col md:inset-0 md:items-center md:justify-center"
+                 style={{ maxHeight: '90svh' }}>
+              {/* Geanimeerde kaart: flex column zodat header+footer altijd zichtbaar zijn */}
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4 md:my-auto"
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4 md:max-h-[85vh]"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-purple-400" />
-                    <h2 className="text-base font-semibold text-white">Nieuw item</h2>
+                {/* Sticky header */}
+                <div className="flex-shrink-0 px-6 pt-5 pb-0">
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Plus className="w-4 h-4 text-purple-400" />
+                      <h2 className="text-base font-semibold text-white">Nieuw item</h2>
+                    </div>
+                    <button onClick={() => setShowAdd(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button onClick={() => setShowAdd(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
-                <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
-                <div className="flex gap-3 mt-6 pb-6">
-                  <button onClick={() => setShowAdd(false)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
-                  <button onClick={handleAdd} disabled={saving} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    Opslaan
-                  </button>
+                {/* Scrollbaar formulier */}
+                <div className="flex-1 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
+                  <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
+                </div>
+                {/* Sticky footer — altijd zichtbaar, nooit te scrollen */}
+                <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.06]">
+                  <div className="flex gap-3">
+                    <button onClick={() => setShowAdd(false)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
+                    <button onClick={handleAdd} disabled={saving} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      Opslaan
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -700,55 +708,62 @@ export default function KalenderPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setEditItem(null)}
             />
-            <div
-              className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center"
-              style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
-            >
+            <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col md:inset-0 md:items-center md:justify-center"
+                 style={{ maxHeight: '90svh' }}>
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4 md:my-auto"
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4 md:max-h-[85vh]"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2">
-                    <Edit3 className="w-4 h-4 text-purple-400" />
-                    <h2 className="text-base font-semibold text-white">Item bewerken</h2>
-                  </div>
-                  <button onClick={() => setEditItem(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <FormFields form={editForm} onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
-                <div className="mt-4">
-                  <label className="block text-xs text-white/50 mb-2">Snel status wijzigen</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {STATUSES.map(s => {
-                      const st = STATUS_STYLES[s] || STATUS_STYLES.gepland
-                      return (
-                        <button key={s} onClick={() => setEditForm(f => ({ ...f, status: s }))}
-                          className={['text-xs px-3 py-1.5 rounded-full font-medium transition-all',
-                            editForm.status === s ? st.badge + ' ring-1 ring-offset-1 ring-offset-black/20 ring-current' : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08]',
-                          ].join(' ')}>
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </button>
-                      )
-                    })}
+                {/* Sticky header */}
+                <div className="flex-shrink-0 px-6 pt-5 pb-0">
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Edit3 className="w-4 h-4 text-purple-400" />
+                      <h2 className="text-base font-semibold text-white">Item bewerken</h2>
+                    </div>
+                    <button onClick={() => setEditItem(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/80 transition-all">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-3 mt-6 pb-6">
-                  <button onClick={handleDelete} disabled={deleting || saving} className="glass-button text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 disabled:opacity-50">
-                    {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    Verwijderen
-                  </button>
-                  <button onClick={() => setEditItem(null)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
-                  <button onClick={handleUpdate} disabled={saving || deleting} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
-                    Opslaan
-                  </button>
+                {/* Scrollbaar formulier + status knoppen */}
+                <div className="flex-1 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
+                  <FormFields form={editForm} onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
+                  <div className="mt-4 mb-2">
+                    <label className="block text-xs text-white/50 mb-2">Snel status wijzigen</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {STATUSES.map(s => {
+                        const st = STATUS_STYLES[s] || STATUS_STYLES.gepland
+                        return (
+                          <button key={s} onClick={() => setEditForm(f => ({ ...f, status: s }))}
+                            className={['text-xs px-3 py-1.5 rounded-full font-medium transition-all',
+                              editForm.status === s ? st.badge + ' ring-1 ring-offset-1 ring-offset-black/20 ring-current' : 'bg-white/[0.04] text-white/40 hover:bg-white/[0.08]',
+                            ].join(' ')}>
+                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+                {/* Sticky footer — altijd zichtbaar */}
+                <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.06]">
+                  <div className="flex gap-3">
+                    <button onClick={handleDelete} disabled={deleting || saving} className="glass-button text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 disabled:opacity-50">
+                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      Verwijderen
+                    </button>
+                    <button onClick={() => setEditItem(null)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
+                    <button onClick={handleUpdate} disabled={saving || deleting} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Edit3 className="w-4 h-4" />}
+                      Opslaan
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </div>
