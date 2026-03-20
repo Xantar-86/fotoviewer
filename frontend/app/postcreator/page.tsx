@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -11,23 +11,21 @@ import {
   Loader2,
   Copy,
   Check,
-  Download,
   Key,
   Sparkles,
-  Image as ImageIcon,
 } from 'lucide-react'
 import { generatePostContent } from '@/lib/api'
 
 // ─── Platform config ───────────────────────────────────────────────────────────
 
 const PLATFORMS = [
-  { id: 'FeetFinder', label: 'FeetFinder', color: 'pink', width: 1080, height: 1080 },
-  { id: 'OnlyFans',   label: 'OnlyFans',   color: 'blue', width: 1080, height: 1350 },
-  { id: 'Fansly',     label: 'Fansly',     color: 'purple', width: 1080, height: 1350 },
-  { id: 'Instagram',  label: 'Instagram',  color: 'gradient', width: 1080, height: 1350 },
-  { id: 'Reddit',     label: 'Reddit',     color: 'orange', width: 1080, height: 1080 },
-  { id: 'Twitter',    label: 'Twitter',    color: 'sky', width: 1200, height: 675 },
-  { id: 'Patreon',    label: 'Patreon',    color: 'red', width: 1080, height: 1080 },
+  { id: 'FeetFinder', label: 'FeetFinder', color: 'pink' },
+  { id: 'OnlyFans',   label: 'OnlyFans',   color: 'blue' },
+  { id: 'Fansly',     label: 'Fansly',     color: 'purple' },
+  { id: 'Instagram',  label: 'Instagram',  color: 'gradient' },
+  { id: 'Reddit',     label: 'Reddit',     color: 'orange' },
+  { id: 'Twitter',    label: 'Twitter',    color: 'sky' },
+  { id: 'Patreon',    label: 'Patreon',    color: 'red' },
 ] as const
 
 type PlatformId = (typeof PLATFORMS)[number]['id']
@@ -52,28 +50,11 @@ const PLATFORM_BADGE_COLORS: Record<string, string> = {
   red:      'bg-red-500/20 text-red-300 border-red-500/30',
 }
 
-// ─── Canvas resize (center crop to fill) ─────────────────────────────────────
-
-function resizeToCanvas(img: HTMLImageElement, width: number, height: number): string {
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d')!
-  const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight)
-  const sw = width / scale
-  const sh = height / scale
-  const sx = (img.naturalWidth - sw) / 2
-  const sy = (img.naturalHeight - sh) / 2
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height)
-  return canvas.toDataURL('image/jpeg', 0.92)
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface PlatformResult {
   caption: string
   hashtags: string[]
-  resizedDataUrl: string
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -88,7 +69,6 @@ export default function PostCreatorPage() {
   const [results, setResults] = useState<Record<string, PlatformResult> | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [captions, setCaptions] = useState<Record<string, string>>({})
-  const imgRef = useRef<HTMLImageElement | null>(null)
 
   useEffect(() => {
     const gk = localStorage.getItem('groq_api_key') || ''
@@ -143,33 +123,13 @@ export default function PostCreatorPage() {
       const platforms = Array.from(selectedPlatforms)
       const data = await generatePostContent(file, platforms, groqKey, apiKey)
 
-      // Load image for canvas resizing
-      const img = new window.Image()
-      img.src = preview!
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve()
-        img.onerror = reject
-      })
-      imgRef.current = img
-
-      // Build results with resized images
       const built: Record<string, PlatformResult> = {}
       const initialCaptions: Record<string, string> = {}
 
       for (const pid of platforms) {
         const aiResult = data.results[pid]
         if (!aiResult) continue
-
-        const platConfig = PLATFORMS.find(p => p.id === pid)
-        const resizedDataUrl = platConfig
-          ? resizeToCanvas(img, platConfig.width, platConfig.height)
-          : preview!
-
-        built[pid] = {
-          caption: aiResult.caption,
-          hashtags: aiResult.hashtags,
-          resizedDataUrl,
-        }
+        built[pid] = { caption: aiResult.caption, hashtags: aiResult.hashtags }
         initialCaptions[pid] = aiResult.caption
       }
 
@@ -194,14 +154,6 @@ export default function PostCreatorPage() {
       toast.success('Copied to clipboard!')
       setTimeout(() => setCopied(null), 2000)
     })
-  }
-
-  function downloadPhoto(pid: string) {
-    if (!results?.[pid]) return
-    const link = document.createElement('a')
-    link.href = results[pid].resizedDataUrl
-    link.download = `${pid.toLowerCase()}-post.jpg`
-    link.click()
   }
 
   return (
@@ -342,9 +294,6 @@ export default function PostCreatorPage() {
                   <span className="block text-center leading-tight">
                     {platform.label}
                   </span>
-                  <span className="block text-center text-[10px] mt-0.5 opacity-60">
-                    {platform.width}×{platform.height}
-                  </span>
                 </button>
               )
             })}
@@ -416,38 +365,24 @@ export default function PostCreatorPage() {
                       className="glass-card p-5 rounded-2xl flex flex-col gap-4"
                     >
                       {/* Platform header */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
                         <span className={[
                           'text-xs font-semibold px-2.5 py-1 rounded-full border',
                           badgeColor,
                         ].join(' ')}>
                           {pid}
                         </span>
-                        {platConfig && (
-                          <span className="text-[10px] text-white/25">
-                            {platConfig.width}×{platConfig.height}px
-                          </span>
-                        )}
                       </div>
 
-                      {/* Resized photo preview */}
+                      {/* Caption */}
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
+                        {preview && (
                           <img
-                            src={result.resizedDataUrl}
-                            alt={`${pid} preview`}
-                            className="w-20 h-20 object-cover rounded-xl border border-white/10"
+                            src={preview}
+                            alt="preview"
+                            className="w-16 h-16 object-cover rounded-xl border border-white/10 flex-shrink-0"
                           />
-                          <button
-                            type="button"
-                            onClick={() => downloadPhoto(pid)}
-                            className="mt-1.5 flex items-center gap-1 text-[10px] text-white/30 hover:text-purple-400 transition-colors w-full justify-center"
-                          >
-                            <Download className="w-3 h-3" />
-                            Download
-                          </button>
-                        </div>
-
+                        )}
                         <div className="flex-1 min-w-0">
                           {/* Caption editable textarea */}
                           <label className="block text-[10px] font-medium text-white/40 mb-1 uppercase tracking-wider">
