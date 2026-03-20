@@ -318,7 +318,7 @@ export default function KalenderPage() {
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <div>
+          <div className="min-w-0">
             <label className="block text-xs text-white/50 mb-1">Datum</label>
             <input
               type="date"
@@ -327,7 +327,7 @@ export default function KalenderPage() {
               className="input-dark w-full text-sm"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="block text-xs text-white/50 mb-1">Platform</label>
             <select
               value={form.platform}
