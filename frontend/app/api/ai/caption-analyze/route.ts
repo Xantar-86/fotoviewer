@@ -65,10 +65,11 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
   const response = await groq.chat.completions.create({
     model: 'meta-llama/llama-4-scout-17b-16e-instruct',
     max_tokens: 1024,
+    temperature: 1.1,
     messages: [
       {
         role: 'system',
-        content: 'Je bent een content creator assistent. Antwoord altijd met alleen geldige JSON, geen markdown, geen uitleg.',
+        content: 'Je bent een creatieve content creator assistent. Schrijf elke keer een unieke, frisse caption — nooit dezelfde formule herhalen. Varieer in opbouw, woordkeuze en toon. Antwoord altijd met alleen geldige JSON, geen markdown, geen uitleg.',
       },
       {
         role: 'user',
@@ -82,7 +83,7 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
             text: `${context}
 
 Analyseer deze foto en schrijf in het Nederlands:
-- "beschrijving": een aansprekende caption van 2-3 zinnen voor dit platform
+- "beschrijving": een unieke, aansprekende caption van 2-3 zinnen voor dit platform — gebruik specifieke details van DEZE foto (kleur, pose, locatie, nagels, sfeer). Varieer je stijl: soms beginnen met een vraag, soms met een statement, soms met een emoji.
 - "hashtags": 5-8 specifieke hashtags op basis van wat je ziet (kleuren, pose, locatie, sfeer, stijl)
 
 JSON formaat:
