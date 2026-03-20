@@ -638,7 +638,10 @@ export default function KalenderPage() {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:bottom-auto"
             >
-              <div className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[92vh] overflow-y-auto overscroll-contain p-6 md:mx-4">
+              <div
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4"
+                style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
+              >
                 {/* Drag handle op mobiel */}
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
                 <div className="flex items-center justify-between mb-5">
@@ -680,7 +683,10 @@ export default function KalenderPage() {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:bottom-auto"
             >
-              <div className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl max-h-[92vh] overflow-y-auto overscroll-contain p-6 md:mx-4">
+              <div
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4"
+                style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
+              >
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
