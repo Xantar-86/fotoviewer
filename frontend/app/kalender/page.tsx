@@ -627,15 +627,16 @@ export default function KalenderPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
             onClick={() => setShowAdd(false)}
           >
+            <div className="flex min-h-full items-start justify-center p-4 pt-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
-              className="glass-card w-full max-w-md max-h-[90vh] overflow-y-auto"
+              className="glass-card w-full max-w-md mb-8"
               onClick={e => e.stopPropagation()}
             >
               {/* Modal header */}
@@ -672,6 +673,7 @@ export default function KalenderPage() {
                 </button>
               </div>
             </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -683,15 +685,16 @@ export default function KalenderPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm"
             onClick={() => setEditItem(null)}
           >
+            <div className="flex min-h-full items-start justify-center p-4 pt-8">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
-              className="glass-card w-full max-w-md max-h-[90vh] overflow-y-auto"
+              className="glass-card w-full max-w-md mb-8"
               onClick={e => e.stopPropagation()}
             >
               {/* Modal header */}
@@ -760,6 +763,7 @@ export default function KalenderPage() {
                 </button>
               </div>
             </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
