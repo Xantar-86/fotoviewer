@@ -130,6 +130,31 @@ export default function KalenderPage() {
 
   useEffect(() => { loadItems() }, [loadItems])
 
+  // ─── Body scroll lock (iOS fix) ──────────────────────────────────────────────
+  useEffect(() => {
+    const isOpen = showAdd || !!editItem
+    if (isOpen) {
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      document.body.style.overflow = 'hidden'
+    } else {
+      const top = document.body.style.top
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      if (top) window.scrollTo(0, -parseInt(top, 10))
+    }
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+    }
+  }, [showAdd, editItem])
+
   // ─── Navigation ─────────────────────────────────────────────────────────────
 
   function prevMonth() {
@@ -624,25 +649,24 @@ export default function KalenderPage() {
       <AnimatePresence>
         {showAdd && (
           <>
-            {/* Backdrop — apart van de modal zodat scrollen niet sluit */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setShowAdd(false)}
             />
-            {/* Bottom sheet op mobiel, centered op desktop */}
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:bottom-auto"
+            {/* Scroll-container: geen transform, body scroll is al gelocked */}
+            <div
+              className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center"
+              style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
             >
-              <div
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4"
-                style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4 md:my-auto"
+                onClick={e => e.stopPropagation()}
               >
-                {/* Drag handle op mobiel */}
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
@@ -654,15 +678,15 @@ export default function KalenderPage() {
                   </button>
                 </div>
                 <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
-                <div className="flex gap-3 mt-6 pb-safe">
+                <div className="flex gap-3 mt-6 pb-6">
                   <button onClick={() => setShowAdd(false)} className="flex-1 glass-button text-sm text-white/60">Annuleren</button>
                   <button onClick={handleAdd} disabled={saving} className="flex-1 glass-button btn-primary text-sm flex items-center justify-center gap-2 disabled:opacity-50">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     Opslaan
                   </button>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
@@ -676,16 +700,17 @@ export default function KalenderPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setEditItem(null)}
             />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 md:inset-0 md:flex md:items-center md:justify-center md:bottom-auto"
+            <div
+              className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center"
+              style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
             >
-              <div
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4"
-                style={{ maxHeight: '90svh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 md:mx-4 md:my-auto"
+                onClick={e => e.stopPropagation()}
               >
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5 md:hidden" />
                 <div className="flex items-center justify-between mb-5">
@@ -714,7 +739,7 @@ export default function KalenderPage() {
                     })}
                   </div>
                 </div>
-                <div className="flex gap-3 mt-6 pb-safe">
+                <div className="flex gap-3 mt-6 pb-6">
                   <button onClick={handleDelete} disabled={deleting || saving} className="glass-button text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 disabled:opacity-50">
                     {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                     Verwijderen
@@ -725,8 +750,8 @@ export default function KalenderPage() {
                     Opslaan
                   </button>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
