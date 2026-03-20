@@ -64,7 +64,7 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
 
   const response = await groq.chat.completions.create({
     model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-    max_tokens: 500,
+    max_tokens: 1024,
     messages: [
       {
         role: 'system',
