@@ -365,7 +365,7 @@ export default function KalenderPage() {
           </div>
           <div>
             <label className="block text-xs text-white/50 mb-1">Kleur</label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-[42px]">
               <input
                 type="color"
                 value={form.kleur}
