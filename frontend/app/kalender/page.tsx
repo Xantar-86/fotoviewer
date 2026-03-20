@@ -680,7 +680,7 @@ export default function KalenderPage() {
                   </div>
                 </div>
                 {/* Scrollbaar formulier */}
-                <div className="flex-1 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
+                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
                   <FormFields form={addForm} onChange={patch => setAddForm(f => ({ ...f, ...patch }))} />
                 </div>
                 {/* Sticky footer — altijd zichtbaar, nooit te scrollen */}
@@ -732,7 +732,7 @@ export default function KalenderPage() {
                   </div>
                 </div>
                 {/* Scrollbaar formulier + status knoppen */}
-                <div className="flex-1 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
+                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-2" style={{ WebkitOverflowScrolling: 'touch' as any }}>
                   <FormFields form={editForm} onChange={patch => setEditForm(f => ({ ...f, ...patch }))} />
                   <div className="mt-4 mb-2">
                     <label className="block text-xs text-white/50 mb-2">Snel status wijzigen</label>
