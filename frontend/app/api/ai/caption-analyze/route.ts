@@ -49,13 +49,30 @@ const PLATFORM_HASHTAGS: Record<string, string[]> = {
 
 function extractJson(text: string): { beschrijving?: string; hashtags?: string[] } | null {
   const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+
+  // Try full JSON parse first
   const match = cleaned.match(/\{[\s\S]*\}/)
-  if (!match) return null
-  try {
-    return JSON.parse(match[0])
-  } catch {
-    return null
+  if (match) {
+    try {
+      const parsed = JSON.parse(match[0])
+      if (parsed.beschrijving) return parsed
+    } catch {}
   }
+
+  // Fallback: extract beschrijving even from truncated/incomplete JSON
+  const descMatch = cleaned.match(/"beschrijving"\s*:\s*"([\s\S]*?)(?:"|$)/)
+  if (descMatch && descMatch[1] && descMatch[1].length > 20) {
+    // Extract hashtags separately if present
+    const hashMatch = cleaned.match(/"hashtags"\s*:\s*\[([^\]]*)\]/)
+    const hashtags: string[] = []
+    if (hashMatch) {
+      const tagMatches = hashMatch[1].matchAll(/"([^"]+)"/g)
+      for (const m of tagMatches) hashtags.push(m[1])
+    }
+    return { beschrijving: descMatch[1].replace(/\\n/g, ' ').trim(), hashtags }
+  }
+
+  return null
 }
 
 async function analyzeWithGroq(b64: string, mediaType: string, platform: string, groqKey: string) {
@@ -64,7 +81,7 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
 
   const response = await groq.chat.completions.create({
     model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-    max_tokens: 1024,
+    max_tokens: 2048,
     temperature: 1.1,
     messages: [
       {
