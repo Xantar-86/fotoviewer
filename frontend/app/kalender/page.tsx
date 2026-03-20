@@ -655,15 +655,15 @@ export default function KalenderPage() {
               onClick={() => setShowAdd(false)}
             />
             {/* Positionerings-wrapper: geen overflow, geen transform */}
-            <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col md:inset-0 md:items-center md:justify-center"
-                 style={{ maxHeight: '90svh' }}>
-              {/* Geanimeerde kaart: flex column zodat header+footer altijd zichtbaar zijn */}
+            <div className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center">
+              {/* max-height op de flex-container zelf zodat flex-1 kind correct werkt */}
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4 md:max-h-[85vh]"
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4"
+                style={{ maxHeight: '90svh' }}
                 onClick={e => e.stopPropagation()}
               >
                 {/* Sticky header */}
@@ -708,14 +708,14 @@ export default function KalenderPage() {
               className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               onClick={() => setEditItem(null)}
             />
-            <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col md:inset-0 md:items-center md:justify-center"
-                 style={{ maxHeight: '90svh' }}>
+            <div className="fixed inset-x-0 bottom-0 z-50 md:inset-0 md:flex md:items-center md:justify-center">
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4 md:max-h-[85vh]"
+                className="glass-card w-full md:max-w-md rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden md:mx-4"
+                style={{ maxHeight: '90svh' }}
                 onClick={e => e.stopPropagation()}
               >
                 {/* Sticky header */}
