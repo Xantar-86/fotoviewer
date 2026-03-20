@@ -11,32 +11,25 @@ function detectMediaType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' |
 }
 
 const PLATFORM_CONTEXT: Record<string, string> = {
-  FeetFinder: `Je schrijft een verleidelijke verkooptekst voor FeetFinder, een platform waar voetenfoto's worden verkocht.
-Schrijf een flirterige, zelfverzekerde caption van 2-3 zinnen VANUIT de creator, gericht aan potentiële kopers.
-Focus op de aantrekkingskracht van de voeten op de foto: de zachtheid, huidtint, nagels, pose.
-Maak de koper nieuwsgierig en laat hen verlangen naar meer. Eindig met een uitnodiging.
-Voorbeeld: "Deze zachte, perfecte voeten wachten op jou 🤍 Voel de zijdezachte huid en ontdek waarom mijn fans steeds terugkomen voor meer. Wil jij ook toegang?"`,
+  FeetFinder: `Write a short, seductive FeetFinder caption in ENGLISH. Max 2 sentences. Written by the creator to potential buyers.
+Flirty, confident, teasing. Use the specific details you see in the photo (skin tone, nails, pose). End with a hook.
+Example: "Silky soft and oh so irresistible 🤍 Come find out why my fans keep coming back for more."`,
 
-  OnlyFans: `Je schrijft een intieme, exclusieve caption voor OnlyFans.
-Schrijf een persoonlijke caption van 2-3 zinnen VANUIT de creator, alsof je rechtstreeks tegen je fans spreekt.
-Geef hen het gevoel dat dit content speciaal voor hen is. Teasend, warm, exclusief.
-Maak hen verlangen naar een abonnement. Gebruik eventueel een emoji.
-Voorbeeld: "Speciaal voor mijn liefste fans 💜 Dit is precies het soort content dat jullie me altijd vragen. Abonneer je en krijg elke week meer van dit."`,
+  OnlyFans: `Write a short, intimate OnlyFans caption in ENGLISH. Max 2 sentences. Written by the creator directly to fans.
+Personal, exclusive, warm. Make them feel this was made just for them.
+Example: "Just for my favorite people 💜 You already know what to do if you want more of this..."`,
 
-  Fansly: `Je schrijft een mysterieuze, verleidelijke caption voor Fansly.
-Schrijf een teasende caption van 2-3 zinnen VANUIT de creator.
-Hint naar wat abonnees te wachten staat zonder alles te onthullen. Mysterieus en zelfverzekerd.
-Voorbeeld: "Niet iedereen mag dit zien 🖤 Alleen mijn subscribers weten wat er nog meer is. Durf jij een kijkje te nemen?"`,
+  Fansly: `Write a short, mysterious Fansly caption in ENGLISH. Max 2 sentences. Written by the creator.
+Teasing, confident, leave them wanting more. Don't reveal everything.
+Example: "Not everyone gets to see this 🖤 Subscribe and find out what you've been missing."`,
 
-  Instagram: `Je schrijft een esthetische lifestyle caption voor Instagram.
-Schrijf een zelfverzekerde, artistieke caption van 2-3 zinnen VANUIT de creator.
-Focus op sfeer, esthetiek en lifestyle. Aansprekend voor een breed publiek, met link in bio verwijzing.
-Voorbeeld: "Soft, golden hour vibes ✨ Soms is het de kleine dingen die het verschil maken. Link in bio voor meer exclusieve content."`,
+  Instagram: `Write a short, aesthetic Instagram caption in ENGLISH. Max 2 sentences. Written by the creator.
+Lifestyle, confident, visually focused. Add a soft call to action.
+Example: "Golden hour never looked this good ✨ Link in bio for exclusive content."`,
 
-  Patreon: `Je schrijft een warme, persoonlijke caption voor Patreon.
-Schrijf een dankbare caption van 2-3 zinnen VANUIT de creator, gericht aan supporters.
-Geef hen het gevoel dat ze iets speciaals krijgen als beloning voor hun support. Warm en oprecht.
-Voorbeeld: "Dit is speciaal voor jullie, mijn trouwste supporters 💖 Zonder jullie zou dit niet mogelijk zijn. Geniet van deze exclusieve content als dankjewel."`,
+  Patreon: `Write a short, warm Patreon caption in ENGLISH. Max 2 sentences. Written by the creator to supporters.
+Grateful, personal, make them feel valued.
+Example: "This one's just for you 💖 Thank you for making this possible, enjoy."`,
 }
 
 const PLATFORM_HASHTAGS: Record<string, string[]> = {
@@ -86,7 +79,7 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
     messages: [
       {
         role: 'system',
-        content: 'Je bent een creatieve content creator assistent. Schrijf elke keer een unieke, frisse caption — nooit dezelfde formule herhalen. Varieer in opbouw, woordkeuze en toon. Antwoord altijd met alleen geldige JSON, geen markdown, geen uitleg.',
+        content: 'You are a creative content creator assistant. Write a unique caption every time — never repeat the same formula. Vary the opening, wording and tone. Always respond with valid JSON only, no markdown, no explanation.',
       },
       {
         role: 'user',
@@ -99,12 +92,12 @@ async function analyzeWithGroq(b64: string, mediaType: string, platform: string,
             type: 'text',
             text: `${context}
 
-Analyseer deze foto en schrijf in het Nederlands:
-- "beschrijving": een unieke, aansprekende caption van 2-3 zinnen voor dit platform — gebruik specifieke details van DEZE foto (kleur, pose, locatie, nagels, sfeer). Varieer je stijl: soms beginnen met een vraag, soms met een statement, soms met een emoji.
-- "hashtags": 5-8 specifieke hashtags op basis van wat je ziet (kleuren, pose, locatie, sfeer, stijl)
+Look at this photo and generate:
+- "beschrijving": a SHORT unique caption in ENGLISH (max 2 sentences) — use specific details from THIS photo (color, pose, nails, skin, setting). Vary your style each time.
+- "hashtags": 5-8 specific hashtags based on what you see
 
-JSON formaat:
-{"beschrijving": "...", "hashtags": ["tag1", "tag2", "tag3"]}`,
+JSON only:
+{"beschrijving": "...", "hashtags": ["tag1", "tag2"]}`,
           },
         ],
       },
